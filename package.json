@@ -1,0 +1,76 @@
+{
+  "name": "sop-recorder",
+  "displayName": "SOP Recorder",
+  "version": "0.1.0",
+  "description": "Record browser operations as Standard Operating Procedures with screenshots and video",
+  "scripts": {
+    "dev": "plasmo dev",
+    "postdev": "cp offscreen.html build/chrome-mv3-dev/ 2>/dev/null || true",
+    "build": "plasmo build && cp offscreen.html build/chrome-mv3-prod/",
+    "build:validate": "pnpm build && pnpm test:build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:build": "vitest run --config vitest.build.config.ts",
+    "test:e2e": "playwright test",
+    "package": "plasmo package"
+  },
+  "dependencies": {
+    "@plasmohq/messaging": "^0.7.0",
+    "@plasmohq/storage": "^1.13.0",
+    "jszip": "^3.10.1",
+    "plasmo": "^0.90.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.1.0",
+    "@types/chrome": "^0.0.287",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/uuid": "^10.0.0",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "manifest": {
+    "permissions": [
+      "activeTab",
+      "tabs",
+      "scripting",
+      "storage",
+      "offscreen",
+      "sidePanel",
+      "tabCapture",
+      "alarms",
+      "downloads",
+      "unlimitedStorage",
+      "webNavigation"
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": ["offscreen.html"],
+        "matches": ["<all_urls>"]
+      }
+    ],
+    "host_permissions": [
+      "<all_urls>"
+    ],
+    "side_panel": {
+      "default_path": "sidepanel.html"
+    },
+    "commands": {
+      "toggle-recording": {
+        "suggested_key": {
+          "default": "Alt+Shift+R"
+        },
+        "description": "Toggle recording"
+      }
+    }
+  }
+}
