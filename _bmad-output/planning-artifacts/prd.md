@@ -1,6 +1,6 @@
 ---
 stepsCompleted: [init, discovery, vision, executive-summary, success, journeys, domain, project-type, scoping, functional, nonfunctional, polish, complete]
-inputDocuments: [brainstorming-session.md, domain-research.md, market-research.md, technical-research.md, project-learnings.md, research-wxt-framework.md, research-extension-testing.md, research-extension-performance.md, research-extension-scaffolding.md, research-rrweb-data-model.md, research-guidechimp-tours.md, research-claude-teach-skills.md]
+inputDocuments: [brainstorming-session.md, domain-research.md, market-research.md, technical-research.md, project-learnings.md, research-wxt-framework.md, research-extension-testing.md, research-extension-performance.md, research-extension-scaffolding.md, research-rrweb-data-model.md, research-guidechimp-tours.md, research-claude-teach-skills.md, research-minimal-frontend.md, research-latest-lib-versions.md]
 workflowType: 'prd'
 ---
 
@@ -178,7 +178,7 @@ While MCP and Claude Code integration are out of MVP scope, the adapter interfac
 
 ### 4.2 Minimal JS, No Framework Bloat
 
-The UI layer uses Lit Web Components and plain TypeScript + HTML rather than React. This keeps bundle sizes small, avoids framework lock-in, and aligns with the browser platform rather than fighting it. PicoCSS provides a classless baseline with semantic HTML; custom styles extend it where needed. Modern CSS features (View Transitions API, CSS Container Queries) are preferred over JavaScript-driven layout and animation.
+The UI layer uses Lit Web Components (light DOM mode, not Shadow DOM) and plain TypeScript + HTML rather than React. This keeps bundle sizes small, avoids framework lock-in, and aligns with the browser platform rather than fighting it. Light DOM is required so that PicoCSS classless styles can cascade into Lit components without Shadow DOM boundary issues. PicoCSS classless (~3-4 KB gzipped) provides a semantic HTML baseline with zero class names needed; custom styles extend it where needed. Modern CSS features (View Transitions API, CSS Container Queries) are preferred over JavaScript-driven layout and animation.
 
 ### 4.3 Record Rich, Export Thin
 
@@ -224,7 +224,7 @@ No network requests. No accounts. No telemetry. Data leaves the device only thro
 | FR-2.3 | Inline editing of step description | Must | Textarea below title |
 | FR-2.4 | Delete individual steps | Must | With confirmation for bulk operations |
 | FR-2.5 | Reorder steps via up/down buttons | Must | Simple, accessible |
-| FR-2.6 | Reorder steps via drag-and-drop | Should | Enhanced UX |
+| FR-2.6 | Reorder steps via drag-and-drop | Should | Implement using native HTML5 Drag and Drop API (no library needed). Provide keyboard-accessible alternative via FR-2.5 up/down buttons. |
 | FR-2.7 | View full-size screenshot for any step | Must | Click thumbnail to expand |
 | FR-2.8 | Automatic step renumbering after edits | Must | Maintain consistent numbering |
 
@@ -443,15 +443,15 @@ No network requests. No accounts. No telemetry. Data leaves the device only thro
 
 | Component | Choice | Rationale |
 |-----------|--------|-----------|
-| **Extension Framework** | WXT (v0.20.x) | Actively maintained (236 releases), Vite-based, ~400 KB bundles (43% smaller than Plasmo), file-based entrypoints, excellent TS support, MIT license. Plasmo is in maintenance mode. |
+| **Extension Framework** | WXT (v0.20.19, RC for v1.0) | Actively maintained (236 releases), Vite 8 support (as of March 14, 2026), ~400 KB bundles (43% smaller than Plasmo), file-based entrypoints, excellent TS support, MIT license. Plasmo is in maintenance mode. |
 | **Language** | TypeScript 5.x (strict mode) | Type safety for message passing, state machine, and Chrome API usage. `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` enabled. |
-| **UI Components** | Lit Web Components | Lightweight (~7 KB), web-standards-based, no virtual DOM overhead, excellent for side panel UI. Avoids React's ~40 KB baseline. Web components are natively understood by browsers. |
-| **Styling** | PicoCSS + custom CSS | Classless CSS framework (~10 KB) provides semantic HTML defaults. Custom properties for theming. Modern CSS features (View Transitions API, Container Queries) for layout and animation. No build-time CSS processing needed. |
+| **UI Components** | Lit 3.3.2 Web Components (light DOM mode) | Lightweight (~5.8 KB gzipped), web-standards-based, no virtual DOM overhead, excellent for side panel UI. Avoids React's ~40 KB baseline. Web components are natively understood by browsers. Light DOM mode used for PicoCSS classless compatibility. |
+| **Styling** | PicoCSS classless + custom CSS | Classless CSS framework (~3-4 KB gzipped) provides semantic HTML defaults with zero class names needed — pure semantic HTML. Custom properties for theming. Modern CSS features (View Transitions API, Container Queries) for layout and animation. No build-time CSS processing needed. |
 | **State Management** | Custom state machine (RecordingStateMachine) in pure TS | Proven pattern from previous iteration. Observer pattern for reactivity. No Chrome API deps — fully testable. |
-| **Testing** | Vitest (unit) + Playwright (E2E with `--load-extension`) | Vitest for fast unit tests with `WxtVitest()` plugin + `@webext-core/fake-browser`. Playwright for full extension E2E. |
+| **Testing** | Vitest 4.1 (unit) + Playwright 1.58 (E2E with `--load-extension` + MV3 support) | Vitest for fast unit tests with `WxtVitest()` plugin + `@webext-core/fake-browser`. Playwright for full extension E2E. |
 | **Package Manager** | pnpm | Fast, disk-efficient, workspace support. |
 | **ZIP Export** | JSZip | Lightweight, browser-compatible ZIP generation. |
-| **Build** | Vite (via WXT) | Fast dev server, optimized production builds, excellent tree-shaking. |
+| **Build** | Vite 8 (via WXT) | Vite 8 (released March 12, 2026) with Rolldown bundler for 10-30x faster builds. Fast dev server, optimized production builds, excellent tree-shaking. |
 | **Linting** | ESLint (flat config) + Prettier | Industry standard code quality. |
 | **CI/CD** | GitHub Actions | Lint, unit tests, E2E tests, bundle size checks, manifest validation on every PR. |
 | **Bundle Monitoring** | size-limit | Per-entry-point budget enforcement in CI. |
@@ -464,8 +464,8 @@ No network requests. No accounts. No telemetry. Data leaves the device only thro
 | Screenshot format | JPEG quality 85 | PNG (2-5x larger, slower), WebP (less universal support) | Best balance of speed (~50-150ms), size (~200 KB), and text readability for SOP documentation. |
 | Screenshot storage | Blobs in IndexedDB | Base64 data URLs in `chrome.storage.local` | Saves 33% vs base64 encoding. Not subject to 10 MB default storage quota. Proper binary blob handling. |
 | Framework | WXT | Plasmo (maintenance mode), CRXJS (stability concerns), raw MV3 | Active maintenance, smaller bundles, Vite ecosystem, better DX. |
-| UI framework | Lit Web Components + plain TS | React (40 KB+ overhead), Vue, Svelte | Minimal footprint, web-standards-based, no framework lock-in. Side panel UI is simple enough to not need a heavy framework. Aligns with minimal-JS philosophy. |
-| Styling | PicoCSS | Tailwind CSS (requires build tooling, utility classes), plain CSS only | Classless approach with semantic HTML. Provides excellent defaults without class proliferation. ~10 KB. Custom CSS for extension-specific needs. |
+| UI framework | Lit Web Components + plain TS | React (40 KB+ overhead), Vue, Svelte, Datastar (architected around backend SSE, not suitable for extension message-passing), Alpine.js (CSP risks in MV3 extensions due to expression evaluation) | Minimal footprint, web-standards-based, no framework lock-in. Side panel UI is simple enough to not need a heavy framework. Aligns with minimal-JS philosophy. |
+| Styling | PicoCSS classless | Tailwind CSS (requires build tooling, utility classes), plain CSS only | Classless approach with pure semantic HTML — no `.classes` needed. Provides excellent defaults without class proliferation. ~3-4 KB gzipped. Custom CSS for extension-specific needs. |
 | Extension UI | Side Panel | Popup, DevTools panel, new tab | Persists across navigation, visible during recording, adequate space for step list. |
 | Data storage | IndexedDB (blobs) + `chrome.storage.local` (metadata) + `chrome.storage.session` (active recording) | `chrome.storage.local` for everything | IndexedDB for large binary data (screenshots). chrome.storage for structured metadata and session state. |
 | Export format | Markdown + ZIP | HTML, PDF, proprietary JSON | Universal, version-controllable, readable in any editor, importable to Notion/Confluence. |
@@ -755,8 +755,8 @@ All checks must pass before merge. Bundle size regressions block the PR.
 | **Side Panel** | Chrome's built-in panel that slides out from the right side of the browser, persistent across tab navigation. |
 | **Content Script** | JavaScript injected into web pages by the extension to capture DOM events. |
 | **Service Worker** | Background script in MV3 that handles extension logic, with limited lifetime (30s idle timeout). |
-| **Lit** | A lightweight library for building web components (~7 KB), maintained by Google. Uses standard Web Component APIs. |
-| **PicoCSS** | A classless CSS framework (~10 KB) that styles semantic HTML elements with no class names required. |
+| **Lit** | A lightweight library for building web components (~5.8 KB gzipped), maintained by Google. Uses standard Web Component APIs. Used in light DOM mode for CSS compatibility. |
+| **PicoCSS** | A classless CSS framework (~3-4 KB gzipped) that styles semantic HTML elements with no class names required. Using the classless variant specifically. |
 | **Adapter Pattern** | A design pattern where core logic depends on interfaces (ports), and platform-specific implementations (adapters) are injected at runtime. |
 | **MCP** | Model Context Protocol — a standard for connecting AI models to external tools and data sources. |
 | **RecordedStep** | The internal data model representing a single captured user action with all metadata needed for any export format. |
@@ -765,3 +765,39 @@ All checks must pass before merge. Bundle size regressions block the PR.
 ---
 
 *This PRD is implementation-ready. The developer agent should begin with the WXT project scaffold (Lit + PicoCSS, no React), define the adapter interfaces in `src/core/`, implement the content script event capture, then the background state machine with Chrome adapters, then the side panel UI with Lit components, and finally the Markdown export module. CI/CD with GitHub Actions should be configured alongside the initial scaffold.*
+
+---
+
+## 12. References & Resources
+
+### Official Documentation
+- WXT Framework: https://wxt.dev/
+- Lit Web Components: https://lit.dev/
+- PicoCSS: https://picocss.com/
+- Chrome Extensions MV3: https://developer.chrome.com/docs/extensions/
+- Playwright Extension Testing: https://playwright.dev/docs/chrome-extensions
+
+### WXT Examples (Reference Implementations)
+- Side Panel: https://github.com/wxt-dev/examples/tree/main/examples/side-panel
+- Playwright E2E Testing: https://github.com/wxt-dev/examples/tree/main/examples/playwright-e2e-testing
+- Vitest Unit Testing: https://github.com/wxt-dev/examples/tree/main/examples/vitest-unit-testing
+- Vanilla i18n: https://github.com/wxt-dev/examples/tree/main/examples/vanilla-i18n
+- WXT i18n: https://github.com/wxt-dev/examples/tree/main/examples/wxt-i18n
+
+### Competitive & Architectural References
+- Screenity (OSS screen recorder): https://github.com/alyssaxuu/screenity
+- GuideChimp (interactive tours): https://github.com/Labs64/GuideChimp
+- GuideChimp Tour Examples: https://github.com/Labs64/GuideChimp-tours/tree/master/guidechimp/tours
+- React Grab (element selection): https://www.react-grab.com/
+- Workmap (OSS SOP recorder): https://github.com/Ajkolaganti/workmap
+
+### Context7 Library IDs (for latest docs lookup)
+| Library | Context7 ID |
+|---------|------------|
+| WXT | `/wxt-dev/wxt` |
+| Vite | `/vitejs/vite` |
+| Lit | `/lit/lit` |
+| Vitest | `/vitest-dev/vitest` |
+| Playwright | `/microsoft/playwright` |
+| Tailwind CSS | `/tailwindlabs/tailwindcss` |
+| PicoCSS | `/picocss/pico` |
