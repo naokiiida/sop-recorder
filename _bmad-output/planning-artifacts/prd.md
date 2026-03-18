@@ -1,6 +1,6 @@
 ---
 stepsCompleted: [init, discovery, vision, executive-summary, success, journeys, domain, project-type, scoping, functional, nonfunctional, polish, complete]
-inputDocuments: [brainstorming-session.md, domain-research.md, market-research.md, technical-research.md, project-learnings.md, research-wxt-framework.md, research-extension-testing.md]
+inputDocuments: [brainstorming-session.md, domain-research.md, market-research.md, technical-research.md, project-learnings.md, research-wxt-framework.md, research-extension-testing.md, research-extension-performance.md, research-extension-scaffolding.md, research-rrweb-data-model.md, research-guidechimp-tours.md, research-claude-teach-skills.md]
 workflowType: 'prd'
 ---
 
@@ -8,7 +8,7 @@ workflowType: 'prd'
 
 **Author:** Naokiiida
 **Date:** 2026-03-18
-**Version:** 1.0
+**Version:** 2.0
 **Status:** Draft
 
 ---
@@ -48,6 +48,7 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 | **Open source** | Full transparency, auditability, community contributions. MIT license. |
 | **Markdown-native** | Universal format compatible with Notion, Confluence, Obsidian, GitHub, and any text editor. |
 | **Zero-config start** | Install from Chrome Web Store, click Record, done. No accounts, no onboarding wizard, no settings required. |
+| **Record once, deploy everywhere** | Internal data model designed from day 1 to export as Markdown SOPs, interactive tours (GuideChimp/Driver.js), Claude shortcuts, and Notion API pages. One recording, many outputs. |
 
 ---
 
@@ -107,7 +108,7 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 | 6 | Reviews steps in side panel during recording | Can see step list building. Can click a step to see its screenshot thumbnail. |
 | 7 | Clicks "Stop Recording" | Recording ends. Side panel transitions to Edit mode showing all captured steps. |
 | 8 | Edits step titles and descriptions | Inline editing. Changes a title from "Clicked input field" to "Enter the customer's email address". Deletes an accidental double-click step. |
-| 9 | Clicks "Export" | Downloads a ZIP containing `sop.md` (Markdown with step numbers, descriptions, and image references) and a `screenshots/` folder with numbered PNG files. |
+| 9 | Clicks "Export" | Downloads a ZIP containing `sop.md` (Markdown with step numbers, descriptions, and image references) and a `screenshots/` folder with numbered JPEG files. |
 | 10 | Opens `sop.md` in any Markdown editor | Sees a complete, formatted SOP ready to paste into Confluence or Google Docs. |
 
 **Success criteria:** Steps 1-10 complete in under 5 minutes for a 10-step procedure. Zero configuration required.
@@ -139,9 +140,59 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 
 ---
 
-## 4. Functional Requirements
+## 4. Architecture Principles
 
-### 4.1 MVP (v1) — In Scope
+### 4.1 Core-Shell Separation (Adapter Pattern)
+
+All core business logic MUST be implemented as pure TypeScript with NO dependencies on Chrome extension APIs or any browser-specific APIs. Chrome APIs are accessed exclusively through adapter/port interfaces.
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│                      Core (Pure TypeScript)                    │
+│                                                                │
+│  RecordingStateMachine    StepManager    SelectorGenerator     │
+│  ExportEngine             DataModel      EventFilter           │
+│                                                                │
+│  ─────────── Adapter Interfaces (Ports) ───────────────────── │
+│                                                                │
+│  IScreenshotCapture   IStorageAdapter   ITabAdapter            │
+│  IMessageBus          IAlarmAdapter     IDownloadAdapter       │
+│                                                                │
+└───────────────────────────────────────────────────────────────┘
+         │                    │                    │
+         ▼                    ▼                    ▼
+┌─────────────┐    ┌─────────────────┐    ┌──────────────┐
+│ Chrome       │    │ MCP Server      │    │ Claude Code   │
+│ Extension    │    │ Adapter (v2)    │    │ Skill (v2)   │
+│ Adapters     │    │                 │    │              │
+└─────────────┘    └─────────────────┘    └──────────────┘
+```
+
+**Rationale:** This architecture enables the same recording engine, state machine, step management, and export logic to be reused across:
+
+1. **Chrome Extension** (MVP) — adapters wrap `chrome.*` APIs
+2. **MCP Server** (v2) — adapters wrap Node.js filesystem and IPC
+3. **Claude Code Agent Skills** (v2) — adapters wrap CLI I/O
+
+While MCP and Claude Code integration are out of MVP scope, the adapter interfaces MUST be defined from day 1 so that adding these targets requires only new adapter implementations, not refactoring of core logic.
+
+### 4.2 Minimal JS, No Framework Bloat
+
+The UI layer uses Lit Web Components and plain TypeScript + HTML rather than React. This keeps bundle sizes small, avoids framework lock-in, and aligns with the browser platform rather than fighting it. PicoCSS provides a classless baseline with semantic HTML; custom styles extend it where needed. Modern CSS features (View Transitions API, CSS Container Queries) are preferred over JavaScript-driven layout and animation.
+
+### 4.3 Record Rich, Export Thin
+
+The internal `RecordedStep[]` data model captures maximum context at recording time — multiple selector strategies, bounding boxes, viewport metadata, scroll position, accessible names. Export adapters then select only the fields relevant to each output format. This avoids re-recording to support new export targets.
+
+### 4.4 Local-First, Zero-Trust
+
+No network requests. No accounts. No telemetry. Data leaves the device only through explicit user-initiated export (file download). This is enforced architecturally (no network permissions in manifest), not by policy.
+
+---
+
+## 5. Functional Requirements
+
+### 5.1 MVP (v1) — In Scope
 
 #### FR-1: Recording Engine
 
@@ -153,13 +204,16 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 | FR-1.4 | Capture click events on interactive elements | Must | Core capture |
 | FR-1.5 | Capture text input events (debounced at 500ms) | Must | Core capture |
 | FR-1.6 | Capture page navigation events | Must | Core capture |
-| FR-1.7 | Auto-screenshot after each captured event (200ms delay for DOM settle) | Must | `chrome.tabs.captureVisibleTab()` |
+| FR-1.7 | Auto-screenshot after each captured event (200ms delay for DOM settle) | Must | `chrome.tabs.captureVisibleTab()`, JPEG quality 85 |
 | FR-1.8 | Filter non-meaningful events: drag movements (>50px), untrusted events, duplicate clicks within 500ms | Must | Noise reduction |
-| FR-1.9 | Generate CSS selectors for captured elements (ID > data-testid > aria-label > tag+attrs > nth-of-type) | Must | Step identification |
+| FR-1.9 | Generate multiple selector strategies per element (CSS, XPath, aria-label) with priority chain: ID > data-testid > aria-label > tag+attrs > nth-of-type | Must | Step identification, tour/test export compatibility |
 | FR-1.10 | Extract accessible names following WAI-ARIA spec | Must | Human-readable step titles |
 | FR-1.11 | Mask password field values as `••••••••` | Must | Privacy |
 | FR-1.12 | Persist recording state to `chrome.storage.session` after each step | Must | Survive service worker restart |
 | FR-1.13 | Show visual recording indicator in side panel | Must | User awareness |
+| FR-1.14 | Capture element bounding box (`getBoundingClientRect`) at click time | Must | Future tour overlay positioning |
+| FR-1.15 | Capture viewport dimensions and scroll position per step | Must | Accurate replay/tour placement |
+| FR-1.16 | Store screenshots as Blobs in IndexedDB (not base64 strings in chrome.storage) | Must | 33% storage savings vs data URL strings |
 
 #### FR-2: Step Editing
 
@@ -180,7 +234,7 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 |----|------------|----------|-------|
 | FR-3.1 | Export as Markdown + screenshots ZIP | Must | Primary export format |
 | FR-3.2 | Markdown includes: SOP title, date, step numbers, step titles, descriptions, screenshot references | Must | Professional format |
-| FR-3.3 | Screenshots exported as numbered PNG files in `screenshots/` subfolder | Must | Organized output |
+| FR-3.3 | Screenshots exported as numbered JPEG files in `screenshots/` subfolder | Must | JPEG quality 85, organized output |
 | FR-3.4 | SOP metadata in export: title, author (optional), date, number of steps | Should | Professional-grade output |
 | FR-3.5 | Copy Markdown to clipboard (without images) | Should | Quick sharing |
 
@@ -188,9 +242,9 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 
 | ID | Requirement | Priority | Notes |
 |----|------------|----------|-------|
-| FR-4.1 | Save completed recordings to `chrome.storage.local` | Must | Persistence |
+| FR-4.1 | Save completed recordings with metadata in `chrome.storage.local`, screenshot blobs in IndexedDB | Must | Persistence with efficient storage |
 | FR-4.2 | List saved recordings with title, date, step count | Must | Side panel view |
-| FR-4.3 | Delete saved recordings | Must | Storage management |
+| FR-4.3 | Delete saved recordings (metadata + associated blobs) | Must | Storage management |
 | FR-4.4 | Edit SOP title for saved recordings | Must | Naming |
 | FR-4.5 | Auto-generate SOP title from first page URL/title | Should | Default naming |
 
@@ -212,57 +266,70 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 | FR-6.2 | Add step number badge at click coordinates post-capture via Canvas API | Should | Step identification in screenshots |
 | FR-6.3 | Remove CSS overlay after screenshot capture (within 100ms) | Should | No lingering visual artifacts |
 
-### 4.2 Post-MVP (v2+) — Explicitly Out of Scope for v1
+### 5.2 Post-MVP (v2+) — Explicitly Out of Scope for v1
 
 | Feature | Target Version | Rationale for Deferral |
 |---------|---------------|----------------------|
 | Video recording | v2 | Adds 40%+ codebase complexity; offscreen document lifecycle, blob URL expiry, large file handling. Excellent free alternatives exist (Screenity, OS-native). |
 | AI step enhancement (BYOK) | v2 | Optional quality-of-life feature; core value is capture + edit + export. Architecture supports it but UI not needed for MVP. |
 | Interactive screenshot annotation (arrows, text, shapes) | v2 | SVG editor in side panel adds significant UX complexity. CSS overlay + step badge sufficient for v1. |
-| Notion API export | v2 | Requires OAuth flow, image hosting, configuration UI. Markdown import is sufficient. |
+| Notion API export | v2 | Requires OAuth flow, image hosting, configuration UI. Markdown import is sufficient. Data model supports it from day 1. |
 | Confluence API export | v2+ | Similar complexity to Notion. Markdown copy-paste works. |
 | Self-contained HTML export | v1.1 | Low effort, high value. Deferred to keep MVP scope tight but target for first minor release. |
 | PDF export | v2 | Client-side PDF quality is poor. Browser "Print to PDF" from HTML export is better. |
-| Tour format export (GuideChimp/Driver.js) | v2+ | Requires mapping steps to tour configs. Architecture supports it via data model. |
-| Claude shortcut export | v2+ | Niche use case. |
-| MCP server integration | v2+ | Requires separate Node.js process. Design extension messaging to be MCP-ready. |
-| Cross-browser support (Firefox) | v2 | Side Panel API differs significantly. WXT migration enables this. |
-| WXT framework migration | v2 | Plasmo works for MVP. WXT preferred long-term (smaller bundles, active maintenance). |
+| Tour format export (GuideChimp/Driver.js) | v2 | Requires adapter layer over RecordedStep[]. Data model captures all needed fields (selectors, bounding boxes, viewport) from day 1. Low-cost, high-impact feature add. |
+| Claude shortcut export | v2 | Export steps as natural language prompt formatted for Claude Chrome import. Data model supports it; requires AI summarization. |
+| MCP server integration | v2 | Core-shell architecture with adapter interfaces enables this without refactoring. Requires separate Node.js process and new adapter implementations. |
+| Claude Code agent skills | v2+ | Same core logic reused via adapter pattern. Requires skill definition format. |
+| Cross-browser support (Firefox) | v2 | Side Panel API differs significantly. WXT supports it natively. |
 | Chrome built-in AI (Gemini Nano) | v2 | Uncertain availability; graceful fallback needed. |
 | PII auto-redaction in screenshots | v2 | Complex image processing. Local-first architecture mitigates risk for v1. |
 | Import/merge recordings | v2+ | Not needed for initial use case. |
+| rrweb session replay layer | v2+ | Optional enhancement for video-like replay. RecordedStep[] remains canonical; rrweb events supplementary. |
 | Collaboration/sharing | Never (v1) | Contradicts local-first philosophy. |
 | Cloud sync | Never (v1) | Contradicts local-first philosophy. |
 | User accounts | Never | Zero-config start is a core differentiator. |
 
 ---
 
-## 5. Non-Functional Requirements
+## 6. Non-Functional Requirements
 
-### 5.1 Performance
+### 6.1 Performance
 
-| Metric | Target | Rationale |
-|--------|--------|-----------|
-| Time from install to first recording start | < 10 seconds | Zero-config start. No onboarding. |
-| Time from action to step appearing in side panel | < 500ms | Real-time feel. 200ms screenshot delay + rendering. |
-| Screenshot capture latency | < 300ms | 200ms DOM settle + captureVisibleTab execution. |
-| Export generation (10-step SOP) | < 3 seconds | ZIP creation with JPEG screenshots. |
-| Export generation (50-step SOP) | < 10 seconds | Upper bound for large SOPs. |
-| Extension bundle size | < 500 KB | Lean distribution. WXT baseline is ~400 KB. |
-| Memory usage during recording | < 50 MB | Screenshots compressed to JPEG 80% quality. |
-| Maximum steps per recording | 200 | Cap to prevent storage issues. |
+| Metric | Must-Have Target | Nice-to-Have Target | Rationale |
+|--------|-----------------|--------------------:|-----------|
+| Extension package (ZIP) | < 2 MB | < 1 MB | Scribe is 1.93 MB. WXT baseline ~400 KB gives headroom. |
+| Content script injected size | < 50 KB | < 20 KB | Chrome does NOT cache compiled extension scripts; every KB multiplies across tabs. Use dynamic imports to load recording logic on demand. |
+| Service worker entry size | < 100 KB | < 50 KB | Small entry point with synchronous listener registration, lazy-load everything else. |
+| Side panel JS bundle | < 200 KB | < 100 KB | Achievable without React. Lit + PicoCSS is inherently smaller. |
+| Service worker cold start | < 200ms | < 100ms | User perceives < 200ms as instantaneous. |
+| Content script page load impact | < 50ms | < 10ms | Inject minimal observer; dynamically import recording logic only when active. |
+| Screenshot capture latency | < 300ms | < 150ms | JPEG quality 85 via `captureVisibleTab` is fastest format. |
+| Screenshot format/quality | JPEG quality 85 | -- | Best balance of capture speed, file size (~200 KB/shot), and text clarity for SOPs. |
+| Screenshot storage | Blobs in IndexedDB | -- | Avoids 33% base64 overhead. Not subject to 10 MB `chrome.storage.local` default quota. |
+| Side panel FCP | < 1000ms | < 500ms | Standard web vitals. |
+| Side panel TTI | < 2000ms | < 1000ms | Achievable with small bundles + lazy-loaded step list. |
+| Memory idle | < 20 MB | < 10 MB | Well below heavy extension range. |
+| Memory per recording step | < 1 MB | < 500 KB | Supports 50+ steps without degradation. |
+| Memory during recording (50 steps) | < 80 MB | < 40 MB | Lazy-load thumbnails, store full screenshots in IndexedDB not memory. |
+| Time from install to first recording | < 10 seconds | -- | Zero-config start. No onboarding. |
+| Time from action to step in side panel | < 500ms | -- | Real-time feel. 200ms screenshot delay + rendering. |
+| Export generation (10-step SOP) | < 3 seconds | < 1 second | ZIP creation with JPEG screenshots. |
+| Export generation (50-step SOP) | < 10 seconds | < 5 seconds | Upper bound for large SOPs. |
+| Maximum steps per recording | 200 | -- | Cap to prevent storage issues. |
 
-### 5.2 Reliability
+### 6.2 Reliability
 
 | Requirement | Detail |
 |-------------|--------|
 | Service worker restart recovery | Recording state persisted to `chrome.storage.session` after each step. Side panel detects recovery state and offers resume/save. |
 | Service worker keepalive during recording | Primary: long-lived port from side panel. Backup: 25-second Chrome alarm. |
-| Data persistence | All completed recordings stored in `chrome.storage.local`. Never lost unless user explicitly deletes. |
+| Data persistence | All completed recordings stored in `chrome.storage.local` (metadata) + IndexedDB (screenshot blobs). Never lost unless user explicitly deletes. |
 | Message ordering | Sequence numbers on captured events to ensure correct step ordering despite async message delivery. |
-| Screenshot compression | JPEG at 80% quality to manage storage. Cap at 200 steps per recording. |
+| Screenshot compression | JPEG at 85% quality. Max 1920px width (scale down larger viewports). Thumbnails at 320x180 (< 10 KB each). |
+| Storage quota management | Auto-purge recordings older than 30 days. Warn at 80% of storage budget. Manual "clear all data" option. Monitor with `navigator.storage.estimate()`. |
 
-### 5.3 Security & Privacy
+### 6.3 Security & Privacy
 
 | Requirement | Detail |
 |-------------|--------|
@@ -270,11 +337,11 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 | No data transmission | Screenshots and recording data never leave the user's device unless explicitly exported via download. |
 | Password masking | All `<input type="password">` values replaced with `••••••••` in captured data. |
 | Sensitive field awareness | Extend masking to `<input type="password">` and fields with `autocomplete="cc-number"` or similar. |
-| Minimum permissions | Request only: `activeTab`, `tabs`, `scripting`, `storage`, `sidePanel`, `alarms`, `downloads`. Drop `offscreen`, `tabCapture`, `unlimitedStorage`, `webNavigation` from previous iteration where possible. |
+| Minimum permissions | Request only: `activeTab`, `tabs`, `scripting`, `storage`, `sidePanel`, `alarms`, `downloads`. No `offscreen`, `tabCapture`, `unlimitedStorage`, `webNavigation`. |
 | Content Security Policy | Standard MV3 CSP. No `unsafe-eval`, no remote code loading. |
 | No user accounts | No authentication, no session management, no user tracking. |
 
-### 5.4 Accessibility
+### 6.4 Accessibility
 
 | Requirement | Detail |
 |-------------|--------|
@@ -284,7 +351,7 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 | Focus management | Visible focus indicators on all interactive elements. |
 | Reduced motion | Respect `prefers-reduced-motion` for any animations. |
 
-### 5.5 Compatibility
+### 6.5 Compatibility
 
 | Requirement | Detail |
 |-------------|--------|
@@ -295,9 +362,9 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 
 ---
 
-## 6. Success Metrics
+## 7. Success Metrics
 
-### 6.1 Launch Metrics (First 90 Days)
+### 7.1 Launch Metrics (First 90 Days)
 
 | Metric | Target | How Measured |
 |--------|--------|-------------|
@@ -308,25 +375,27 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 | GitHub issues (bugs) | < 20 critical/high | GitHub issues |
 | Avg. CWS review sentiment | Positive (>80%) | Manual review |
 
-### 6.2 Product Quality Metrics (Internal)
+### 7.2 Product Quality Metrics (Internal)
 
 | Metric | Target | How Measured |
 |--------|--------|-------------|
 | Unit test coverage | >= 80% on core modules (state machine, event capture, selector generation, export) | Vitest coverage report |
-| E2E test coverage | Critical path (record → edit → export) covered | Playwright test suite |
-| Bundle size | < 500 KB | Build output |
+| E2E test coverage | Critical path (record -> edit -> export) covered | Playwright test suite |
+| Bundle size | < 2 MB (package), < 50 KB (content script) | `size-limit` in CI |
 | Zero-crash recording sessions | > 99% (< 1 in 100 recordings fails due to extension error) | E2E tests + manual testing |
 | Export format correctness | 100% of exports produce valid Markdown with correct image references | Automated validation in tests |
+| Manifest validation | Pass all Chrome Web Store validation checks | CI automated check |
+| WCAG compliance | Side panel passes WCAG 2.1 AA audit | Playwright + axe-core in CI |
 
-### 6.3 North Star Metric
+### 7.3 North Star Metric
 
-**Number of SOPs exported per week.** This measures actual value delivery — the user successfully completed the full Record → Edit → Export journey.
+**Number of SOPs exported per week.** This measures actual value delivery — the user successfully completed the full Record -> Edit -> Export journey.
 
 ---
 
-## 7. Technical Constraints & Decisions
+## 8. Technical Constraints & Decisions
 
-### 7.1 Architecture
+### 8.1 Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -334,83 +403,137 @@ No local-first, open-source, privacy-focused Chrome extension exists for profess
 │                                                      │
 │  Content Script (event-capture.ts)                   │
 │    - DOM event listeners (click, input, navigation)  │
-│    - Selector generation                             │
+│    - Multi-strategy selector generation              │
+│    - Bounding box capture (getBoundingClientRect)    │
 │    - Accessible name extraction                      │
 │    - Password masking                                │
 │    - CSS overlay injection for screenshots            │
+│    - Viewport/scroll metadata capture                │
 │         │                                            │
 │         │ chrome.runtime.sendMessage                 │
 │         ▼                                            │
 │  Background Service Worker (background.ts)           │
-│    - RecordingStateMachine (state management)        │
-│    - Screenshot capture (captureVisibleTab)          │
-│    - Recording persistence (chrome.storage)          │
-│    - Service worker keepalive (alarms + ports)       │
+│    - RecordingStateMachine (pure TS, no Chrome deps) │
+│    - Chrome adapter: screenshot capture              │
+│    - Chrome adapter: storage (IndexedDB + storage)   │
+│    - Chrome adapter: alarms + ports (keepalive)      │
 │         │                                            │
 │         │ chrome.runtime messages / port             │
 │         ▼                                            │
 │  Side Panel (sidepanel/)                             │
+│    - Lit Web Components for reactive UI              │
+│    - PicoCSS base + custom styles                    │
 │    - Recording controls (start/stop/pause)           │
-│    - Step list with thumbnails                       │
+│    - Step list with lazy-loaded thumbnails           │
 │    - Inline editing (title, description)             │
 │    - Export UI                                       │
 │    - Recording management                            │
 │                                                      │
+│  Core Engine (src/core/) — NO Chrome API deps        │
+│    - RecordingStateMachine                           │
+│    - StepManager                                     │
+│    - SelectorGenerator                               │
+│    - ExportEngine (Markdown, future: tour, etc.)     │
+│    - Adapter interfaces (ports)                      │
+│                                                      │
 └─────────────────────────────────────────────────────┘
 ```
 
-### 7.2 Technology Stack
+### 8.2 Technology Stack
 
 | Component | Choice | Rationale |
 |-----------|--------|-----------|
-| **Framework** | WXT (v0.20.x) | Actively maintained, Vite-based, ~400 KB bundles (43% smaller than Plasmo), file-based entrypoints, excellent TS support. Plasmo is in maintenance mode. |
-| **Language** | TypeScript 5.x (strict mode) | Type safety for message passing, state machine, and Chrome API usage. |
-| **UI Framework** | React 18+ | Familiar, well-supported in WXT, adequate for side panel UI. |
-| **Styling** | Tailwind CSS 4 | Utility-first, small output, WXT + Vite supports it natively. |
-| **State Management** | Custom state machine (RecordingStateMachine) | Proven pattern from previous iteration. Observer pattern for reactivity. |
-| **Testing** | Vitest (unit) + Playwright (E2E with `--load-extension`) | Vitest for fast unit tests. Playwright for full extension E2E testing. |
+| **Extension Framework** | WXT (v0.20.x) | Actively maintained (236 releases), Vite-based, ~400 KB bundles (43% smaller than Plasmo), file-based entrypoints, excellent TS support, MIT license. Plasmo is in maintenance mode. |
+| **Language** | TypeScript 5.x (strict mode) | Type safety for message passing, state machine, and Chrome API usage. `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` enabled. |
+| **UI Components** | Lit Web Components | Lightweight (~7 KB), web-standards-based, no virtual DOM overhead, excellent for side panel UI. Avoids React's ~40 KB baseline. Web components are natively understood by browsers. |
+| **Styling** | PicoCSS + custom CSS | Classless CSS framework (~10 KB) provides semantic HTML defaults. Custom properties for theming. Modern CSS features (View Transitions API, Container Queries) for layout and animation. No build-time CSS processing needed. |
+| **State Management** | Custom state machine (RecordingStateMachine) in pure TS | Proven pattern from previous iteration. Observer pattern for reactivity. No Chrome API deps — fully testable. |
+| **Testing** | Vitest (unit) + Playwright (E2E with `--load-extension`) | Vitest for fast unit tests with `WxtVitest()` plugin + `@webext-core/fake-browser`. Playwright for full extension E2E. |
 | **Package Manager** | pnpm | Fast, disk-efficient, workspace support. |
 | **ZIP Export** | JSZip | Lightweight, browser-compatible ZIP generation. |
-| **Build** | Vite (via WXT) | Fast dev server, optimized production builds. |
+| **Build** | Vite (via WXT) | Fast dev server, optimized production builds, excellent tree-shaking. |
+| **Linting** | ESLint (flat config) + Prettier | Industry standard code quality. |
+| **CI/CD** | GitHub Actions | Lint, unit tests, E2E tests, bundle size checks, manifest validation on every PR. |
+| **Bundle Monitoring** | size-limit | Per-entry-point budget enforcement in CI. |
 
-### 7.3 Key Technical Decisions
+### 8.3 Key Technical Decisions
 
 | Decision | Choice | Alternatives Rejected | Rationale |
 |----------|--------|----------------------|-----------|
 | Screenshot API | `chrome.tabs.captureVisibleTab()` | CDP `Page.captureScreenshot`, `tabCapture` stream | Simplest, no warning bar, no offscreen document, `activeTab` permission sufficient. Full-page screenshots deferred to v2. |
+| Screenshot format | JPEG quality 85 | PNG (2-5x larger, slower), WebP (less universal support) | Best balance of speed (~50-150ms), size (~200 KB), and text readability for SOP documentation. |
+| Screenshot storage | Blobs in IndexedDB | Base64 data URLs in `chrome.storage.local` | Saves 33% vs base64 encoding. Not subject to 10 MB default storage quota. Proper binary blob handling. |
 | Framework | WXT | Plasmo (maintenance mode), CRXJS (stability concerns), raw MV3 | Active maintenance, smaller bundles, Vite ecosystem, better DX. |
+| UI framework | Lit Web Components + plain TS | React (40 KB+ overhead), Vue, Svelte | Minimal footprint, web-standards-based, no framework lock-in. Side panel UI is simple enough to not need a heavy framework. Aligns with minimal-JS philosophy. |
+| Styling | PicoCSS | Tailwind CSS (requires build tooling, utility classes), plain CSS only | Classless approach with semantic HTML. Provides excellent defaults without class proliferation. ~10 KB. Custom CSS for extension-specific needs. |
 | Extension UI | Side Panel | Popup, DevTools panel, new tab | Persists across navigation, visible during recording, adequate space for step list. |
-| Data storage | `chrome.storage.local` + `chrome.storage.session` | IndexedDB, localStorage | Chrome API-native, syncs with extension lifecycle, session storage for in-progress recordings. |
+| Data storage | IndexedDB (blobs) + `chrome.storage.local` (metadata) + `chrome.storage.session` (active recording) | `chrome.storage.local` for everything | IndexedDB for large binary data (screenshots). chrome.storage for structured metadata and session state. |
 | Export format | Markdown + ZIP | HTML, PDF, proprietary JSON | Universal, version-controllable, readable in any editor, importable to Notion/Confluence. |
 | Video recording | Deferred to v2 | Include in MVP | 40%+ complexity increase. Top source of bugs in previous iteration. |
 | AI enhancement | Deferred to v2 | Include in MVP | Not core value proposition. Architecture designed to support it (BYOK, OpenAI-compatible API). |
-| Event capture | DOM event listeners | rrweb, MutationObserver | Discrete step capture, not session replay. Lower overhead, proven pattern. |
-| Selector generation | Custom implementation | `optimal-select`, `finder` | Existing priority chain (ID > testid > aria > tag) works well. External lib adds unnecessary dependency. |
+| Event capture | DOM event listeners | rrweb, MutationObserver | Discrete step capture, not session replay. Zero bundle size impact (native APIs). Lower overhead. rrweb adds 40-50 KB gzipped + 21-25% CPU overhead. Custom approach produces higher quality selectors from live DOM. |
+| Selector strategy | Multiple selectors per element (CSS, XPath, aria) | Single CSS selector, rrweb node IDs | Multiple strategies improve robustness for tour export and test generation. Borrowed from Chrome DevTools Recorder pattern. |
+| Core architecture | Pure TS with adapter interfaces | Chrome API calls throughout codebase | Enables future reuse as MCP server and Claude Code skills without refactoring. All core logic testable without Chrome API mocks. |
 
-### 7.4 Internal Data Model
+### 8.4 Internal Data Model
 
 ```typescript
 interface RecordedStep {
   id: string;                    // UUID
   sequenceNumber: number;        // For ordering
-  type: 'click' | 'input' | 'navigation';
   timestamp: number;             // Unix ms
-  pageUrl: string;
-  pageTitle: string;
-  // Element identification
-  selector: string;              // Generated CSS selector
-  accessibleName: string;        // Human-readable element name
+
+  // Action
+  type: StepAction;
+  inputValue?: string;           // Masked for password fields
+
+  // Target element — multiple selector strategies
+  selectors: {
+    css: string;                 // Primary CSS selector (ID > data-testid > aria > tag > nth-of-type)
+    xpath?: string;              // XPath fallback for tour/test robustness
+    aria?: string;               // aria-label or accessible name
+    textContent?: string;        // Visible text of element (truncated)
+  };
   tagName: string;
   elementType?: string;          // input type, button, link, etc.
-  // Action data
-  inputValue?: string;           // Masked for password fields
-  clickCoordinates?: { x: number; y: number }; // Viewport-relative
-  // Generated content
+  elementRole?: string;          // ARIA role
+  accessibleName: string;        // Human-readable element name (WAI-ARIA spec)
+
+  // Spatial data — for tour overlays and replay
+  boundingBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  clickCoordinates?: {           // Viewport-relative
+    x: number;
+    y: number;
+  };
+
+  // Page context
+  pageUrl: string;
+  pageTitle: string;
+  viewport: {
+    width: number;
+    height: number;
+  };
+  scrollPosition: {
+    x: number;
+    y: number;
+  };
+
+  // User-editable content
   title: string;                 // Auto-generated, user-editable
   description: string;           // User-editable
-  // Screenshot
-  screenshotDataUrl: string;     // Base64 JPEG
+
+  // Screenshot — stored as Blob in IndexedDB, referenced by key
+  screenshotBlobKey: string;     // IndexedDB key for screenshot Blob
+  thumbnailDataUrl?: string;     // Small inline thumbnail for list view (320x180, < 10 KB)
 }
+
+type StepAction = 'click' | 'dblclick' | 'input' | 'select' | 'check' |
+                  'navigate' | 'scroll' | 'submit' | 'keypress';
 
 interface Recording {
   id: string;                    // UUID
@@ -422,13 +545,24 @@ interface Recording {
     startUrl: string;
     startPageTitle: string;
     browserVersion: string;
+    stepCount: number;
   };
 }
 ```
 
-This model is designed to support future export formats (tour configs, test scripts, Claude shortcuts) without schema changes.
+This model is designed to support all planned export formats without schema changes:
 
-### 7.5 Permissions Justification
+| Export Format | Fields Used |
+|--------------|-------------|
+| **Markdown SOP** | title, description, screenshotBlobKey, sequenceNumber, pageUrl |
+| **HTML SOP** | All SOP fields + inline screenshots |
+| **GuideChimp tour JSON** | selectors.css, title, description, boundingBox, pageUrl (path grouping) |
+| **Driver.js tour config** | selectors.css, title, description, boundingBox |
+| **Claude shortcut prompt** | type, accessibleName, inputValue, pageUrl, title (AI-summarized into natural language) |
+| **Playwright test skeleton** | selectors (css/aria), type, inputValue, pageUrl |
+| **Notion API blocks** | title, description, screenshotBlobKey, sequenceNumber |
+
+### 8.5 Permissions Justification
 
 | Permission | Why Needed | User Impact |
 |-----------|-----------|-------------|
@@ -439,17 +573,53 @@ This model is designed to support future export formats (tour configs, test scri
 | `alarms` | Service worker keepalive during active recording (25-second interval) | None |
 | `downloads` | Save exported ZIP files to user's filesystem | Low — only triggers on explicit export action |
 
-Permissions removed from previous iteration: `offscreen` (no video), `tabCapture` (no video), `unlimitedStorage` (JPEG compression keeps size manageable), `webNavigation` (can use content script navigation detection instead).
+Permissions removed from previous iteration: `offscreen` (no video), `tabCapture` (no video), `unlimitedStorage` (JPEG compression + IndexedDB keeps size manageable), `webNavigation` (content script navigation detection instead).
 
 ---
 
-## 8. MVP Scope Boundary
+## 9. Testing Requirements
+
+### 9.1 Baseline Test Suite (Ship with MVP)
+
+| Category | Tool | What to Test |
+|----------|------|-------------|
+| **Static analysis** | TypeScript strict mode | Type safety across all modules. `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. |
+| **Manifest validation** | Custom Vitest test | Validate `manifest.json` structure, required fields, permissions match declared usage. |
+| **Permissions audit** | Custom Vitest test | Assert no unexpected permissions. Verify minimum permission set. |
+| **Unit tests** | Vitest + WxtVitest plugin + `@webext-core/fake-browser` | Core state machine, selector generation, event filtering, export engine, step management. All core modules at >= 80% coverage. |
+| **Service worker startup** | Vitest | Verify service worker initializes within 200ms budget. Verify event listeners registered synchronously. |
+| **Side panel rendering** | Vitest + DOM testing | Lit components render correctly. All views (Home, Recording, Edit) render. |
+| **WCAG compliance** | Playwright + axe-core | Side panel passes automated accessibility audit (WCAG 2.1 AA). |
+| **E2E critical path** | Playwright with `--load-extension` | Full record -> edit -> export flow on a test page. |
+| **Bundle size** | size-limit in CI | Per-entry-point budgets: content script < 50 KB, service worker < 100 KB, side panel < 200 KB, total package < 2 MB. |
+
+### 9.2 CI/CD Pipeline (GitHub Actions)
+
+```
+PR opened / push to main
+    ├── Lint (ESLint + Prettier check)
+    ├── Type check (tsc --noEmit)
+    ├── Unit tests (Vitest)
+    ├── Build (wxt build)
+    ├── Bundle size check (size-limit)
+    ├── Manifest validation
+    └── E2E tests (Playwright, headless Chromium + --load-extension)
+```
+
+All checks must pass before merge. Bundle size regressions block the PR.
+
+---
+
+## 10. MVP Scope Boundary
 
 ### In Scope (v1.0)
 
 - [x] Start/stop/pause recording via side panel and keyboard shortcut
 - [x] Capture click, input, and navigation events in the active tab
-- [x] Auto-screenshot after each captured event (200ms delay)
+- [x] Auto-screenshot after each captured event (JPEG quality 85, 200ms delay)
+- [x] Store screenshots as Blobs in IndexedDB
+- [x] Multiple selector strategies per element (CSS, XPath, aria)
+- [x] Element bounding box and viewport/scroll metadata capture
 - [x] Live step list in side panel during recording
 - [x] Edit step title and description inline
 - [x] Delete steps
@@ -461,6 +631,9 @@ Permissions removed from previous iteration: `offscreen` (no video), `tabCapture
 - [x] Automatic element highlighting in screenshots (CSS overlay)
 - [x] Step number badge on screenshots (Canvas API)
 - [x] Keyboard shortcut (Alt+Shift+R) for record toggle
+- [x] Core-shell architecture with adapter interfaces (pure TS core)
+- [x] Lit Web Components + PicoCSS for side panel UI
+- [x] CI/CD with manifest validation, bundle size checks, unit + E2E tests
 
 ### Out of Scope (v1.0)
 
@@ -471,7 +644,11 @@ Permissions removed from previous iteration: `offscreen` (no video), `tabCapture
 - [ ] Notion/Confluence API export
 - [ ] Self-contained HTML export (target v1.1)
 - [ ] PDF export
-- [ ] MCP server integration
+- [ ] Tour format export (GuideChimp/Driver.js) — data model ready, adapter not built
+- [ ] Claude shortcut export — data model ready, adapter not built
+- [ ] MCP server integration — adapter interfaces defined, implementation deferred
+- [ ] Claude Code agent skills
+- [ ] rrweb session replay layer
 - [ ] Cross-browser support (Firefox, Safari)
 - [ ] Collaboration/sharing features
 - [ ] Cloud sync
@@ -480,15 +657,14 @@ Permissions removed from previous iteration: `offscreen` (no video), `tabCapture
 - [ ] Iframe content capture (logged as "Interacted with embedded frame")
 - [ ] Full-page screenshots (viewport only in v1)
 - [ ] Multi-language UI (English only in v1)
-- [ ] Tour format export
 
 ---
 
-## 9. Release Strategy
+## 11. Release Strategy
 
-### 9.1 v1.0 — MVP Launch
+### 11.1 v1.0 — MVP Launch
 
-**Target:** Functional Record → Edit → Export flow with Chrome Web Store listing.
+**Target:** Functional Record -> Edit -> Export flow with Chrome Web Store listing.
 
 **Distribution:**
 1. **Chrome Web Store** — Primary channel. Clear privacy messaging: "100% local, zero data collection."
@@ -507,24 +683,34 @@ Permissions removed from previous iteration: `offscreen` (no video), `tabCapture
 - "Export to Markdown"
 - Screenshots showing: recording in progress, step editing, exported SOP
 
-### 9.2 v1.1 — Quick Follow-Up
+### 11.2 v1.1 — Quick Follow-Up
 
 - Self-contained HTML export (single file, base64 images)
 - Copy Markdown to clipboard
 - Improved step auto-titling heuristics
 - Bug fixes from initial user feedback
 
-### 9.3 v2.0 — AI & Integrations
+### 11.3 v2.0 — Multi-Format Export & AI
 
-- BYOK AI enhancement (OpenAI-compatible API)
-- Chrome built-in AI (Gemini Nano) as zero-config option
-- Notion API export
-- WXT migration (from Plasmo if MVP ships on Plasmo)
+- **Tour export**: GuideChimp JSON + Driver.js config adapters (data model already supports it)
+- **Claude shortcut export**: AI-summarized natural language prompt, importable via Claude Chrome
+- **MCP server**: `sop_list`, `sop_read`, `sop_execute` tools using same core engine via Node.js adapters
+- **BYOK AI enhancement**: OpenAI-compatible API for step title/description improvement
+- **Notion API export**: Structured page creation from RecordedStep[]
+- Chrome built-in AI (Gemini Nano) as zero-config AI option
 - Screenshot annotation editor
 - PII auto-redaction
-- Firefox support
+- Firefox support (WXT enables this natively)
 
-### 9.4 Monetization
+### 11.4 v3.0 — Platform
+
+- Claude Code agent skills (reuse core engine)
+- rrweb session replay layer (opt-in, supplementary to RecordedStep[])
+- Playwright test skeleton export
+- Interactive tutorial mode with Shepherd.js `advanceOn` support
+- Multi-language UI
+
+### 11.5 Monetization
 
 **v1:** None. Free and open source. Build user base and trust.
 
@@ -541,7 +727,7 @@ Permissions removed from previous iteration: `offscreen` (no video), `tabCapture
 
 | Feature | SOP Recorder (v1) | Scribe (Free) | Tango (Free) | Workmap |
 |---------|-------------------|---------------|--------------|---------|
-| Auto screenshots | Yes | Yes | Yes | Yes |
+| Auto screenshots | Yes (JPEG q85, IndexedDB) | Yes | Yes | Yes |
 | Step editing | Full (reorder, delete, edit) | Limited (upgrade to edit) | Limited | Basic |
 | Export formats | Markdown + ZIP | None (upgrade for PDF/HTML) | None (upgrade for PDF) | MD, JSON, Word, PDF |
 | Price | Free | Free (10 guides max) | Free (15 workflows max) | Free |
@@ -550,7 +736,10 @@ Permissions removed from previous iteration: `offscreen` (no video), `tabCapture
 | Accounts required | No | Yes | Yes | No |
 | Artificial limits | None | 10 guides, no export | 15 workflows, no PDF | None |
 | AI enhancement | v2 (BYOK) | Yes (cloud) | No | No |
-| Side panel UI | Yes | Yes | No | No (popup) |
+| Side panel UI | Yes (Lit + PicoCSS) | Yes | No | No (popup) |
+| Tour export | v2 (data model ready) | No | No | No |
+| Multiple selectors | Yes (CSS + XPath + aria) | No | No | No |
+| Adapter architecture | Yes (MCP/CLI ready) | No | No | No |
 
 ---
 
@@ -566,7 +755,13 @@ Permissions removed from previous iteration: `offscreen` (no video), `tabCapture
 | **Side Panel** | Chrome's built-in panel that slides out from the right side of the browser, persistent across tab navigation. |
 | **Content Script** | JavaScript injected into web pages by the extension to capture DOM events. |
 | **Service Worker** | Background script in MV3 that handles extension logic, with limited lifetime (30s idle timeout). |
+| **Lit** | A lightweight library for building web components (~7 KB), maintained by Google. Uses standard Web Component APIs. |
+| **PicoCSS** | A classless CSS framework (~10 KB) that styles semantic HTML elements with no class names required. |
+| **Adapter Pattern** | A design pattern where core logic depends on interfaces (ports), and platform-specific implementations (adapters) are injected at runtime. |
+| **MCP** | Model Context Protocol — a standard for connecting AI models to external tools and data sources. |
+| **RecordedStep** | The internal data model representing a single captured user action with all metadata needed for any export format. |
+| **IndexedDB** | A browser-native database for storing large amounts of structured data, including blobs. Not subject to `chrome.storage.local` quota limits. |
 
 ---
 
-*This PRD is implementation-ready. The developer agent should begin with the WXT project scaffold, implement the content script event capture, then the background state machine, then the side panel UI, and finally the export module.*
+*This PRD is implementation-ready. The developer agent should begin with the WXT project scaffold (Lit + PicoCSS, no React), define the adapter interfaces in `src/core/`, implement the content script event capture, then the background state machine with Chrome adapters, then the side panel UI with Lit components, and finally the Markdown export module. CI/CD with GitHub Actions should be configured alongside the initial scaffold.*
