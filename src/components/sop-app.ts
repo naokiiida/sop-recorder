@@ -1,6 +1,7 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { RecordingController } from './recording-controller.js';
+import { icon, ArrowLeft } from './icons.js';
 import './sop-home.js';
 import './sop-recording.js';
 import './sop-editor.js';
@@ -24,7 +25,7 @@ export class SopApp extends LitElement {
     return html`
       ${this.ctrl.viewState === 'edit'
         ? html`<nav style="margin-bottom:8px;">
-            <button class="sop-back-button" @click=${this.handleBack} aria-label="Back to recordings">&#8592;</button>
+            <button class="sop-back-button" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>
           </nav>`
         : nothing}
 

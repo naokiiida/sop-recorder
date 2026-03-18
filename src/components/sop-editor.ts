@@ -2,6 +2,7 @@ import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { RecordedStep, Recording } from '../core/types.js';
 import type { SopStepCard } from './sop-step-card.js';
+import { icon, Trash2 } from './icons.js';
 import './sop-step-card.js';
 
 /**
@@ -93,7 +94,7 @@ export class SopEditor extends LitElement {
         ${this.undoStep
           ? html`
             <div class="sop-undo-toast" role="alert">
-              <span>&#128465; Step deleted</span>
+              <span>${icon(Trash2, 14)} Step deleted</span>
               <button class="secondary outline" style="padding:4px 10px;font-size:0.8rem;" @click=${this.handleUndo}>Undo</button>
             </div>
           `

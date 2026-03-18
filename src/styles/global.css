@@ -4,21 +4,16 @@
 /* ── Custom properties ──────────────────────────────────────────────────────── */
 
 :root {
-  /* Text hierarchy (WCAG AA compliant on dark bg) */
-  --sop-text-secondary: #cbd5e0;
-  --sop-text-tertiary: #a0aec0;
-
   /* Accent colors */
   --sop-recording-color: #e53e3e;
   --sop-paused-color: #d69e2e;
 
-  /* Cards & borders */
-  --sop-step-border: 1px solid var(--pico-muted-border-color, #4a5568);
-  --sop-card-hover: #3a4556;
+  /* Cards & borders — theme-aware using PicoCSS vars */
+  --sop-step-border: 1px solid var(--pico-muted-border-color);
+  --sop-card-hover: color-mix(in srgb, var(--pico-card-background-color) 85%, var(--pico-color) 15%);
 
-  /* Editable fields */
-  --sop-editable-bg: rgba(255, 255, 255, 0.03);
-  --sop-editable-hover-bg: rgba(255, 255, 255, 0.06);
+  /* Editable fields — theme-aware (works in light and dark) */
+  --sop-editable-hover-bg: color-mix(in srgb, var(--pico-card-background-color) 90%, var(--pico-color) 10%);
 
   /* Spacing (4px base unit) */
   --sop-gap-card: 8px;
@@ -54,16 +49,15 @@ article {
   border: none;
   padding: 0.5rem;
   cursor: pointer;
-  font-size: 1.2rem;
-  color: var(--sop-text-secondary);
+  color: var(--pico-muted-color);
   border-radius: 4px;
   transition: color 0.15s, background 0.15s;
   line-height: 1;
 }
 
 .sop-back-button:hover {
-  color: var(--pico-primary, #1095c1);
-  background: rgba(16, 149, 193, 0.08);
+  color: var(--pico-primary);
+  background: var(--sop-editable-hover-bg);
 }
 
 /* ── Recording indicator ────────────────────────────────────────────────────── */
@@ -106,7 +100,7 @@ article {
 /* ── Text utilities ─────────────────────────────────────────────────────────── */
 
 .sop-muted {
-  color: var(--sop-text-secondary);
+  color: var(--pico-muted-color);
   font-size: 0.85rem;
 }
 
@@ -206,13 +200,13 @@ article {
   cursor: pointer;
   font-size: 0.85rem;
   border-radius: 4px;
-  color: var(--sop-text-secondary);
+  color: var(--pico-muted-color);
   transition: background 0.1s, color 0.1s;
   line-height: 1;
 }
 
 .sop-hover-actions button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--sop-editable-hover-bg);
   color: var(--pico-color);
 }
 
@@ -241,7 +235,8 @@ article {
 
 .sop-editable:hover {
   background: var(--sop-editable-hover-bg);
-  border-color: var(--pico-primary, #1095c1);
+  border-color: var(--pico-primary);
+  color: var(--pico-color);
 }
 
 .sop-editable--placeholder {

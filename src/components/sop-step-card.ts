@@ -1,6 +1,7 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { RecordedStep } from '../core/types.js';
+import { icon, ChevronUp, ChevronDown, Trash2 } from './icons.js';
 
 type CardMode = 'live' | 'edit';
 
@@ -69,9 +70,9 @@ export class SopStepCard extends LitElement {
             ${this.mode === 'edit'
               ? html`
                 <div class="sop-hover-actions">
-                  <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move up">&#9650;</button>
-                  <button @click=${this.handleMoveDown} ?disabled=${this.isLast} aria-label="Move down">&#9660;</button>
-                  <button class="sop-danger" @click=${this.handleDelete} aria-label="Delete step">&#128465;</button>
+                  <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move up">${icon(ChevronUp, 14)}</button>
+                  <button @click=${this.handleMoveDown} ?disabled=${this.isLast} aria-label="Move down">${icon(ChevronDown, 14)}</button>
+                  <button class="sop-danger" @click=${this.handleDelete} aria-label="Delete step">${icon(Trash2, 14)}</button>
                 </div>
               `
               : nothing}

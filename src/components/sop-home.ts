@@ -1,6 +1,7 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { RecordingMetadata } from '../core/types.js';
+import { icon, EllipsisVertical, Trash2, Download } from './icons.js';
 
 /**
  * Home view — "Start Recording" CTA + saved recordings list (title only).
@@ -11,8 +12,26 @@ export class SopHome extends LitElement {
 
   @state() private openMenuId: string | null = null;
 
+  private boundCloseMenu = this.closeMenuOnClickOutside.bind(this);
+
   override createRenderRoot() {
     return this;
+  }
+
+  override connectedCallback() {
+    super.connectedCallback();
+    document.addEventListener('click', this.boundCloseMenu);
+  }
+
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+    document.removeEventListener('click', this.boundCloseMenu);
+  }
+
+  private closeMenuOnClickOutside() {
+    if (this.openMenuId) {
+      this.openMenuId = null;
+    }
   }
 
   override render() {
@@ -30,7 +49,6 @@ export class SopHome extends LitElement {
   private renderEmpty() {
     return html`
       <div style="text-align:center;padding:2rem 0;">
-        <p style="font-size:2rem;margin-bottom:0.5rem;">&#128221;</p>
         <p><strong>Record your first SOP</strong></p>
         <p class="sop-muted">Click "Start Recording" and interact with any web page.</p>
       </div>
@@ -40,7 +58,7 @@ export class SopHome extends LitElement {
   private renderList() {
     return html`
       <h2>Saved Recordings</h2>
-      <div class="sop-stack--tight" style="display:flex;flex-direction:column;gap:var(--sop-gap-card);">
+      <div style="display:flex;flex-direction:column;gap:var(--sop-gap-card);">
         ${this.recordings.map((rec) => this.renderCard(rec))}
       </div>
     `;
@@ -72,25 +90,28 @@ export class SopHome extends LitElement {
             <button
               @click=${(e: Event) => { e.stopPropagation(); this.toggleMenu(id); }}
               aria-label="Actions for ${title}"
-            >&#8942;</button>
+            >${icon(EllipsisVertical, 16)}</button>
           </div>
         </div>
 
         ${this.openMenuId === id
           ? html`
-            <nav style="position:absolute;right:12px;top:100%;background:var(--pico-card-background-color);border:1px solid var(--pico-muted-border-color);border-radius:6px;z-index:10;min-width:120px;box-shadow:0 4px 12px rgba(0,0,0,0.25);overflow:hidden;">
+            <nav
+              @click=${(e: Event) => e.stopPropagation()}
+              style="position:absolute;right:12px;top:100%;background:var(--pico-card-background-color);border:1px solid var(--pico-muted-border-color);border-radius:6px;z-index:10;min-width:120px;box-shadow:0 4px 12px rgba(0,0,0,0.25);overflow:hidden;"
+            >
               <ul style="list-style:none;margin:0;padding:4px 0;">
                 <li>
                   <button
                     @click=${(e: Event) => { e.stopPropagation(); this.handleExport(id); }}
-                    style="display:block;width:100%;text-align:left;background:none;border:none;padding:8px 12px;cursor:pointer;font-size:0.85rem;color:var(--pico-color);"
-                  >Export</button>
+                    style="display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;padding:8px 12px;cursor:pointer;font-size:0.85rem;color:var(--pico-color);"
+                  >${icon(Download, 14)} Export</button>
                 </li>
                 <li>
                   <button
                     @click=${(e: Event) => { e.stopPropagation(); this.handleDelete(id); }}
-                    style="display:block;width:100%;text-align:left;background:none;border:none;padding:8px 12px;cursor:pointer;font-size:0.85rem;color:var(--sop-recording-color);"
-                  >&#128465; Delete</button>
+                    style="display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;padding:8px 12px;cursor:pointer;font-size:0.85rem;color:var(--sop-recording-color);"
+                  >${icon(Trash2, 14)} Delete</button>
                 </li>
               </ul>
             </nav>
