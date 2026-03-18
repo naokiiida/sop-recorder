@@ -8,7 +8,7 @@ workflowType: 'prd'
 
 **Author:** Naokiiida
 **Date:** 2026-03-18
-**Version:** 2.0
+**Version:** 2.1
 **Status:** Draft
 
 ---
@@ -337,7 +337,7 @@ No network requests. No accounts. No telemetry. Data leaves the device only thro
 | No data transmission | Screenshots and recording data never leave the user's device unless explicitly exported via download. |
 | Password masking | All `<input type="password">` values replaced with `••••••••` in captured data. |
 | Sensitive field awareness | Extend masking to `<input type="password">` and fields with `autocomplete="cc-number"` or similar. |
-| Minimum permissions | Request only: `activeTab`, `tabs`, `scripting`, `storage`, `sidePanel`, `alarms`, `downloads`. No `offscreen`, `tabCapture`, `unlimitedStorage`, `webNavigation`. |
+| Minimum permissions | Request only: `activeTab`, `scripting`, `storage`, `sidePanel`, `alarms`, `downloads`. No `tabs`, `offscreen`, `tabCapture`, `unlimitedStorage`, `webNavigation`. **Note:** `tabs` permission removed — `activeTab` is sufficient for injecting content scripts and calling `captureVisibleTab()` on the current tab. The `tabs` permission would expose `tab.url`/`tab.title` on *all* tabs, which is unnecessary since SOP Recorder only operates on the active tab. Removing it reduces the CWS permission prompt and strengthens the privacy positioning. |
 | Content Security Policy | Standard MV3 CSP. No `unsafe-eval`, no remote code loading. |
 | No user accounts | No authentication, no session management, no user tracking. |
 
@@ -359,6 +359,16 @@ No network requests. No accounts. No telemetry. Data leaves the device only thro
 | Manifest version | MV3 only. MV2 is fully deprecated. |
 | Operating systems | Windows, macOS, Linux (ChromeOS as bonus). |
 | Display scaling | Screenshots captured at device pixel ratio. UI renders correctly at 100%-200% zoom. |
+
+### 6.6 Error Handling
+
+| Failure Scenario | Expected Behavior |
+|-----------------|-------------------|
+| `captureVisibleTab()` failure (protected pages like `chrome://`, `chrome-extension://`, rate limiting, tab not focused) | Skip screenshot for the affected step. Log the step without an image. Show a non-blocking warning in the side panel: "Screenshot unavailable for this step." Recording continues uninterrupted. |
+| IndexedDB quota exhaustion | Detect via `navigator.storage.estimate()` and warn when usage exceeds 80% of available quota. On write failure, show a persistent warning: "Storage full — export or delete old recordings to continue." Prevent new recordings from starting until space is available. |
+| Content script injection failure (restricted pages such as `chrome://`, `chrome-extension://`, Chrome Web Store, browser internal pages) | Show a non-blocking message in the side panel: "Cannot record on this page." If injection fails mid-recording, pause recording and notify the user. Resume automatically when the user navigates to a recordable page. |
+| Message passing failure (service worker restart during active recording) | Recover recording state from `chrome.storage.session`, which persists across service worker restarts within the same browser session. On reconnection, replay any buffered steps from the content script. Show a brief "Reconnecting..." indicator if the interruption is user-visible. |
+| Export failure (ZIP generation error, blob read failure) | Show an error message with a "Retry Export" button. If retry fails, offer fallback: export Markdown text only (without screenshots). Log the error details to the browser console for debugging. |
 
 ---
 
@@ -389,7 +399,13 @@ No network requests. No accounts. No telemetry. Data leaves the device only thro
 
 ### 7.3 North Star Metric
 
-**Number of SOPs exported per week.** This measures actual value delivery — the user successfully completed the full Record -> Edit -> Export journey.
+**Number of recordings with 5+ steps saved locally.** This measures actual value delivery — the user completed a meaningful recording session (not just a test click). A recording with 5+ steps indicates a real workflow was captured, signaling the product delivered its core promise.
+
+**Measurement approach (no telemetry):** This metric cannot be measured directly in production without user data collection, which is architecturally prohibited. Instead, it is validated through:
+- **E2E test scenarios** that assert the full Record -> Edit -> Export flow produces multi-step recordings
+- **CWS review sentiment** — reviews mentioning successful documentation of real workflows
+- **GitHub issue patterns** — feature requests for editing/export improvements imply active multi-step usage
+- **User-reported feedback** via GitHub discussions
 
 ---
 
