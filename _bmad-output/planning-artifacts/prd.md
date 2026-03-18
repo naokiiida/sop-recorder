@@ -236,7 +236,7 @@ No network requests. No accounts. No telemetry. Data leaves the device only thro
 | FR-3.2 | Markdown includes: SOP title, date, step numbers, step titles, descriptions, screenshot references | Must | Professional format |
 | FR-3.3 | Screenshots exported as numbered JPEG files in `screenshots/` subfolder | Must | JPEG quality 85, organized output |
 | FR-3.4 | SOP metadata in export: title, author (optional), date, number of steps | Should | Professional-grade output |
-| FR-3.5 | Copy Markdown to clipboard (without images) | Should | Quick sharing |
+| FR-3.5 | Copy Markdown to clipboard (without images) | Must | Quick sharing |
 
 #### FR-4: Recording Management
 

@@ -54,7 +54,7 @@ SOP Recorder is a Chrome Extension (Manifest V3) that captures browser interacti
 | Base Styling | PicoCSS (classless) | 2.1.1 |
 | Unit Testing | Vitest + WxtVitest + @webext-core/fake-browser | 4.1.0 |
 | E2E Testing | Playwright + --load-extension | 1.58.x |
-| ZIP Export | JSZip | latest |
+| ZIP Export | JSZip | 3.10.1 |
 | Package Manager | pnpm | latest |
 | Linting | ESLint (flat config) + Prettier | latest |
 | Bundle Monitoring | size-limit | latest |
@@ -103,6 +103,10 @@ sop-recorder/
       sop-editor.ts              # Step editing view
       sop-step-card.ts           # Individual step display/edit
       sop-export-panel.ts        # Export format selection + download
+      sop-screenshot-lightbox.ts # Full-size screenshot dialog with prev/next navigation
+      sop-empty-state.ts         # First-launch empty state prompt
+      sop-recording-card.ts      # Recording list item in home view
+      sop-undo-toast.ts          # Temporary undo notification for destructive actions
 
     styles/
       global.css                 # PicoCSS import + CSS custom properties
@@ -785,7 +789,7 @@ export class SopApp extends LitElement {
   // Light DOM: PicoCSS styles cascade into component
   createRenderRoot() { return this; }
 
-  @state() private currentView: 'home' | 'recording' | 'editor' = 'home';
+  @state() private currentView: 'home' | 'recording' | 'edit' = 'home';
 
   render() {
     switch (this.currentView) {
@@ -793,7 +797,7 @@ export class SopApp extends LitElement {
         return html`<sop-home @start-recording=${this.handleStart}></sop-home>`;
       case 'recording':
         return html`<sop-recording @stop=${this.handleStop}></sop-recording>`;
-      case 'editor':
+      case 'edit':
         return html`<sop-editor .recording=${this.activeRecording}></sop-editor>`;
     }
   }
