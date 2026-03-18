@@ -1,0 +1,12 @@
+.wxt/
+.output/
+.plasmo/
+.claude/
+node_modules/
+dist/
+_bmad/
+_bmad-output/
+docs/
+pnpm-lock.yaml
+playwright-report/
+test-results/

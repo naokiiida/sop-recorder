@@ -2,9 +2,7 @@ export default defineBackground(() => {
   console.log('SOP Recorder background service worker started.');
 
   // Open side panel when extension icon is clicked
-  browser.sidePanel
-    .setPanelBehavior({ openPanelOnActionClick: true })
-    .catch(console.error);
+  browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
 
   // Listen for keyboard shortcut
   browser.commands.onCommand.addListener((command) => {

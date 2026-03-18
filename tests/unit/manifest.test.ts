@@ -1,0 +1,59 @@
+import { describe, it, expect, beforeAll } from 'vitest';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
+interface Manifest {
+  manifest_version: number;
+  name: string;
+  version: string;
+  description: string;
+  permissions: string[];
+  background: { service_worker: string };
+  side_panel: { default_path: string };
+  content_scripts: { matches: string[]; js: string[] }[];
+}
+
+describe('manifest.json validation', () => {
+  let manifest: Manifest;
+
+  beforeAll(async () => {
+    const manifestPath = resolve(import.meta.dirname, '../../.output/chrome-mv3/manifest.json');
+    const raw = await readFile(manifestPath, 'utf-8');
+    manifest = JSON.parse(raw) as Manifest;
+  });
+
+  it('uses manifest version 3', () => {
+    expect(manifest.manifest_version).toBe(3);
+  });
+
+  it('has required metadata', () => {
+    expect(manifest.name).toBeTruthy();
+    expect(manifest.version).toBeTruthy();
+    expect(manifest.description).toBeTruthy();
+  });
+
+  it('declares required permissions', () => {
+    const required = ['activeTab', 'scripting', 'storage', 'sidePanel', 'alarms', 'downloads'];
+    for (const perm of required) {
+      expect(manifest.permissions).toContain(perm);
+    }
+  });
+
+  it('configures a background service worker', () => {
+    expect(manifest.background).toBeDefined();
+    expect(manifest.background.service_worker).toBeTruthy();
+  });
+
+  it('configures a side panel', () => {
+    expect(manifest.side_panel).toBeDefined();
+    expect(manifest.side_panel.default_path).toBeTruthy();
+  });
+
+  it('configures content scripts', () => {
+    expect(manifest.content_scripts).toBeDefined();
+    expect(manifest.content_scripts.length).toBeGreaterThan(0);
+    const firstScript = manifest.content_scripts[0];
+    expect(firstScript).toBeDefined();
+    expect(firstScript?.js.length).toBeGreaterThan(0);
+  });
+});
