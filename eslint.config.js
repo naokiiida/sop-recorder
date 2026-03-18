@@ -14,4 +14,10 @@ export default tseslint.config(
       'no-eval': 'error',
     },
   },
+  {
+    files: ['tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
 );
