@@ -200,26 +200,29 @@ article {
   cursor: pointer;
   font-size: 0.85rem;
   border-radius: 4px;
-  color: var(--pico-muted-color);
-  transition: background 0.1s, color 0.1s;
+  color: inherit; /* Inherit from parent — works inside article (white) and step-card (foreground) */
+  opacity: 0.6;
+  transition: background 0.1s, opacity 0.1s;
   line-height: 1;
 }
 
 .sop-hover-actions button:hover {
-  background: var(--sop-editable-hover-bg);
-  color: var(--pico-color);
+  opacity: 1;
+  background: rgba(128, 128, 128, 0.15);
 }
 
 .sop-hover-actions button:disabled {
-  opacity: 0.3;
+  opacity: 0.2;
   cursor: not-allowed;
 }
 
 .sop-hover-actions .sop-danger {
   color: var(--sop-recording-color);
+  opacity: 0.8;
 }
 
 .sop-hover-actions .sop-danger:hover {
+  opacity: 1;
   background: rgba(229, 62, 62, 0.1);
 }
 
@@ -236,11 +239,10 @@ article {
 .sop-editable:hover {
   background: var(--sop-editable-hover-bg);
   border-color: var(--pico-primary);
-  color: var(--pico-color);
 }
 
 .sop-editable--placeholder {
-  color: var(--sop-text-tertiary);
+  color: var(--pico-muted-color);
   font-style: italic;
 }
 

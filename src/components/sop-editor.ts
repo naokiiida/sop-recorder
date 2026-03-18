@@ -85,7 +85,7 @@ export class SopEditor extends LitElement {
           : nothing}
 
         ${stepCount > 0
-          ? html`<button style="width:100%;margin-top:var(--sop-gap-section);" @click=${this.handleExport}>
+          ? html`<button class="contrast" style="width:100%;margin-top:var(--sop-gap-section);" @click=${this.handleExport}>
               Export as ZIP
             </button>`
           : nothing}
