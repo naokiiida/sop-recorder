@@ -29,13 +29,16 @@ export default defineContentScript({
     }
 
     async function handleMessageAsync(message: BackgroundToContentMessage): Promise<void> {
+      console.log('[SOP Recorder] content received message:', message.type);
       try {
         switch (message.type) {
           case 'START_CAPTURE': {
+            console.log('[SOP Recorder] Loading recorder module...');
             if (!recorder) {
               recorder = await import('../content/recorder.js');
             }
             recorder.startCapture();
+            console.log('[SOP Recorder] Capture started');
             break;
           }
           case 'STOP_CAPTURE':
