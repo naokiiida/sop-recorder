@@ -1,9 +1,10 @@
 import { LitElement, html, nothing } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 import { RecordingController } from './recording-controller.js';
 import './sop-home.js';
 import './sop-recording.js';
 import './sop-editor.js';
+import './sop-screenshot-lightbox.js';
 
 /**
  * Root application shell with state-driven view routing.
@@ -13,29 +14,32 @@ import './sop-editor.js';
 export class SopApp extends LitElement {
   private ctrl = new RecordingController(this);
 
-  // Light DOM — PicoCSS styles semantic HTML children directly
+  @state() private lightboxBlobKey: string | null = null;
+
   override createRenderRoot() {
     return this;
   }
 
   override render() {
     return html`
-      <header class="sop-flex-between">
-        ${this.ctrl.viewState === 'edit'
-          ? html`<button
-              @click=${this.handleBack}
-              aria-label="Back to home"
-              style="background:none;border:none;padding:0.25rem;cursor:pointer;font-size:1.2rem;"
-            >&larr;</button>`
-          : nothing}
-        <h1 style="margin:0;flex:1;">SOP Recorder</h1>
-      </header>
+      ${this.ctrl.viewState === 'edit'
+        ? html`<nav style="margin-bottom:8px;">
+            <button class="sop-back-button" @click=${this.handleBack} aria-label="Back to recordings">&#8592;</button>
+          </nav>`
+        : nothing}
 
       ${this.ctrl.error
-        ? html`<p role="alert" style="color:var(--sop-recording-color);font-size:0.8rem;">${this.ctrl.error}</p>`
+        ? html`<p role="alert" style="color:var(--sop-recording-color);font-size:0.85rem;margin:0 0 8px;">${this.ctrl.error}</p>`
         : nothing}
 
       ${this.renderView()}
+
+      ${this.lightboxBlobKey
+        ? html`<sop-screenshot-lightbox
+            .blobKey=${this.lightboxBlobKey}
+            @close-lightbox=${() => { this.lightboxBlobKey = null; }}
+          ></sop-screenshot-lightbox>`
+        : nothing}
     `;
   }
 
@@ -71,8 +75,6 @@ export class SopApp extends LitElement {
         ></sop-editor>`;
     }
   }
-
-  // ── Event Handlers ────────────────────────────────────────────────────
 
   private handleStartRecording() {
     this.ctrl.startRecording();
@@ -110,8 +112,7 @@ export class SopApp extends LitElement {
   }
 
   private handleShowLightbox(e: CustomEvent<{ blobKey: string }>) {
-    // Lightbox will be wired in S5.8
-    console.log('[SOP Recorder] Show lightbox:', e.detail.blobKey);
+    this.lightboxBlobKey = e.detail.blobKey;
   }
 
   private handleBack() {

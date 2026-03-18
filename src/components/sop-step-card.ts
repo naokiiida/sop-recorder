@@ -5,7 +5,14 @@ import type { RecordedStep } from '../core/types.js';
 type CardMode = 'live' | 'edit';
 
 /**
- * Reusable step card with live (read-only) and edit (interactive) modes.
+ * Step card — live (compact, read-only) and edit (interactive) modes.
+ *
+ * Cohesion rules applied:
+ * - 🗑 trash icon for delete (not ✕)
+ * - ▲▼🗑 actions are hover-reveal (.sop-hover-actions)
+ * - URL hidden in live mode, secondary text in edit mode
+ * - Step badge [N] in edit mode
+ * - .sop-editable for clickable title/description
  */
 @customElement('sop-step-card')
 export class SopStepCard extends LitElement {
@@ -26,8 +33,9 @@ export class SopStepCard extends LitElement {
   override render() {
     if (!this.step) return nothing;
 
-    const thumbnailClass =
-      this.mode === 'live' ? 'sop-thumbnail sop-thumbnail--live' : 'sop-thumbnail sop-thumbnail--edit';
+    const thumbClass = this.mode === 'live'
+      ? 'sop-thumbnail sop-thumbnail--live'
+      : 'sop-thumbnail sop-thumbnail--edit';
 
     return html`
       <div class="sop-step-card"
@@ -35,59 +43,48 @@ export class SopStepCard extends LitElement {
         @dragstart=${this.mode === 'edit' ? this.handleDragStart : nothing}
         @dragend=${this.mode === 'edit' ? this.handleDragEnd : nothing}
       >
-        <!-- Left: thumbnail -->
+        <!-- Thumbnail -->
         <div>
           ${this.step.thumbnailDataUrl
             ? html`<img
                 src=${this.step.thumbnailDataUrl}
-                alt="Step ${this.step.sequenceNumber} screenshot"
-                class=${thumbnailClass}
+                alt="Step ${this.step.sequenceNumber}"
+                class=${thumbClass}
                 @click=${this.mode === 'edit' ? this.handleThumbnailClick : nothing}
               />`
-            : html`<div class=${thumbnailClass} style="background:var(--pico-muted-border-color,#e2e8f0);display:flex;align-items:center;justify-content:center;color:var(--pico-muted-color,#a0aec0);font-size:0.7rem;">No img</div>`}
+            : html`<div class=${thumbClass} style="background:var(--pico-muted-border-color);display:flex;align-items:center;justify-content:center;color:var(--sop-text-tertiary);font-size:0.65rem;">No img</div>`}
         </div>
 
-        <!-- Right: content -->
-        <div style="min-width:0;">
-          <!-- Header: step number + actions -->
-          <div class="sop-flex-between" style="margin-bottom:0.25rem;">
-            <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--pico-primary,#1095c1);">
-              Step ${this.step.sequenceNumber}
-            </span>
+        <!-- Content -->
+        <div style="min-width:0;display:flex;flex-direction:column;gap:4px;">
+          <!-- Header row: badge + title + hover actions -->
+          <div class="sop-flex-between">
+            <div class="sop-flex" style="min-width:0;flex:1;gap:6px;">
+              ${this.mode === 'edit'
+                ? html`<span class="sop-step-badge">${this.step.sequenceNumber}</span>`
+                : nothing}
+              ${this.renderTitle()}
+            </div>
+
             ${this.mode === 'edit'
               ? html`
-                <div class="sop-flex" style="gap:0.15rem;flex-shrink:0;">
-                  <button
-                    @click=${this.handleMoveUp}
-                    ?disabled=${this.isFirst}
-                    aria-label="Move step up"
-                    style="background:none;border:none;padding:0.2rem 0.35rem;cursor:pointer;font-size:0.75rem;line-height:1;border-radius:3px;"
-                  >&#9650;</button>
-                  <button
-                    @click=${this.handleMoveDown}
-                    ?disabled=${this.isLast}
-                    aria-label="Move step down"
-                    style="background:none;border:none;padding:0.2rem 0.35rem;cursor:pointer;font-size:0.75rem;line-height:1;border-radius:3px;"
-                  >&#9660;</button>
-                  <button
-                    @click=${this.handleDelete}
-                    aria-label="Delete step"
-                    style="background:none;border:none;padding:0.2rem 0.35rem;cursor:pointer;font-size:0.75rem;line-height:1;color:var(--sop-recording-color);border-radius:3px;"
-                  >&#10005;</button>
+                <div class="sop-hover-actions">
+                  <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move up">&#9650;</button>
+                  <button @click=${this.handleMoveDown} ?disabled=${this.isLast} aria-label="Move down">&#9660;</button>
+                  <button class="sop-danger" @click=${this.handleDelete} aria-label="Delete step">&#128465;</button>
                 </div>
               `
               : nothing}
           </div>
 
-          <!-- Title -->
-          ${this.renderTitle()}
+          <!-- URL: hidden in live, secondary in edit -->
+          ${this.mode === 'edit'
+            ? html`<div class="sop-muted sop-truncate" style="font-size:0.8rem;color:var(--sop-text-tertiary);" title=${this.step.pageUrl}>
+                ${this.truncateUrl(this.step.pageUrl)}
+              </div>`
+            : nothing}
 
-          <!-- URL -->
-          <div class="sop-url sop-truncate" title=${this.step.pageUrl}>
-            ${this.truncateUrl(this.step.pageUrl)}
-          </div>
-
-          <!-- Description (edit mode only) -->
+          <!-- Description: edit mode only -->
           ${this.mode === 'edit' ? this.renderDescription() : nothing}
         </div>
       </div>
@@ -102,15 +99,13 @@ export class SopStepCard extends LitElement {
         <input
           type="text"
           .value=${this.editTitleValue}
-          @input=${(e: Event) => {
-            this.editTitleValue = (e.target as HTMLInputElement).value;
-          }}
+          @input=${(e: Event) => { this.editTitleValue = (e.target as HTMLInputElement).value; }}
           @keydown=${(e: KeyboardEvent) => {
             if (e.key === 'Enter') this.saveTitle();
             if (e.key === 'Escape') this.cancelTitleEdit();
           }}
           @blur=${this.saveTitle}
-          style="font-size:0.9rem;padding:0.2rem 0.35rem;margin:0 0 0.15rem;width:100%;"
+          style="flex:1;min-width:0;"
         />
       `;
     }
@@ -119,18 +114,15 @@ export class SopStepCard extends LitElement {
       return html`
         <strong
           class="sop-truncate sop-editable"
-          style="display:block;font-size:0.9rem;margin-bottom:0.15rem;"
+          style="flex:1;min-width:0;font-size:0.9rem;"
           @click=${this.startTitleEdit}
-          title="Click to edit title"
+          title="Click to edit"
         >${this.step.title}</strong>
       `;
     }
 
-    return html`
-      <strong class="sop-truncate" style="display:block;font-size:0.85rem;">
-        ${this.step.title}
-      </strong>
-    `;
+    // Live mode: plain title
+    return html`<strong class="sop-truncate" style="flex:1;min-width:0;font-size:0.85rem;">${this.step.title}</strong>`;
   }
 
   private startTitleEdit() {
@@ -151,8 +143,7 @@ export class SopStepCard extends LitElement {
       this.dispatchEvent(
         new CustomEvent('update-step', {
           detail: { stepId: this.step.id, changes: { title: newTitle } },
-          bubbles: true,
-          composed: true,
+          bubbles: true, composed: true,
         }),
       );
     }
@@ -169,29 +160,24 @@ export class SopStepCard extends LitElement {
       return html`
         <textarea
           .value=${this.editDescriptionValue}
-          @input=${(e: Event) => {
-            this.editDescriptionValue = (e.target as HTMLTextAreaElement).value;
-          }}
-          @keydown=${(e: KeyboardEvent) => {
-            if (e.key === 'Escape') this.cancelDescriptionEdit();
-          }}
+          @input=${(e: Event) => { this.editDescriptionValue = (e.target as HTMLTextAreaElement).value; }}
+          @keydown=${(e: KeyboardEvent) => { if (e.key === 'Escape') this.cancelDescriptionEdit(); }}
           @blur=${this.saveDescription}
           rows="2"
-          style="font-size:0.85rem;padding:0.35rem;margin-top:0.35rem;width:100%;resize:vertical;"
           placeholder="Add a description..."
+          style="width:100%;resize:vertical;"
         ></textarea>
       `;
     }
 
-    const hasDescription = this.step.description && this.step.description.length > 0;
-
+    const hasDesc = this.step.description && this.step.description.length > 0;
     return html`
       <div
-        class="sop-editable ${hasDescription ? '' : 'sop-editable--placeholder'}"
-        style="font-size:0.85rem;margin-top:0.35rem;min-height:1.4em;"
+        class="sop-editable ${hasDesc ? '' : 'sop-editable--placeholder'}"
+        style="font-size:0.85rem;min-height:1.2em;"
         @click=${this.startDescriptionEdit}
         title="Click to edit description"
-      >${hasDescription ? this.step.description : '+ Add description'}</div>
+      >${hasDesc ? this.step.description : '\u270E Add description'}</div>
     `;
   }
 
@@ -212,8 +198,7 @@ export class SopStepCard extends LitElement {
       this.dispatchEvent(
         new CustomEvent('update-step', {
           detail: { stepId: this.step.id, changes: { description: newDesc } },
-          bubbles: true,
-          composed: true,
+          bubbles: true, composed: true,
         }),
       );
     }
@@ -223,62 +208,44 @@ export class SopStepCard extends LitElement {
     this.editingDescription = false;
   }
 
-  // ── Actions ─────────────────────────────────────────────────────────────
+  // ── Actions (🗑 trash, ▲▼ reorder — all hover-reveal) ─────────────────
 
   private handleMoveUp() {
     this.dispatchEvent(
-      new CustomEvent('reorder-step', {
-        detail: { stepId: this.step.id, direction: 'up' },
-        bubbles: true,
-        composed: true,
-      }),
+      new CustomEvent('reorder-step', { detail: { stepId: this.step.id, direction: 'up' }, bubbles: true, composed: true }),
     );
   }
 
   private handleMoveDown() {
     this.dispatchEvent(
-      new CustomEvent('reorder-step', {
-        detail: { stepId: this.step.id, direction: 'down' },
-        bubbles: true,
-        composed: true,
-      }),
+      new CustomEvent('reorder-step', { detail: { stepId: this.step.id, direction: 'down' }, bubbles: true, composed: true }),
     );
   }
 
   private handleDelete() {
     this.dispatchEvent(
-      new CustomEvent('delete-step', {
-        detail: { stepId: this.step.id },
-        bubbles: true,
-        composed: true,
-      }),
+      new CustomEvent('delete-step', { detail: { stepId: this.step.id }, bubbles: true, composed: true }),
     );
   }
 
   private handleThumbnailClick() {
     if (this.step.screenshotBlobKey) {
       this.dispatchEvent(
-        new CustomEvent('show-lightbox', {
-          detail: { blobKey: this.step.screenshotBlobKey },
-          bubbles: true,
-          composed: true,
-        }),
+        new CustomEvent('show-lightbox', { detail: { blobKey: this.step.screenshotBlobKey }, bubbles: true, composed: true }),
       );
     }
   }
 
-  // ── Drag & Drop ─────────────────────────────────────────────────────────
+  // ── D&D (implicit — no grip handle, cursor change is enough) ──────────
 
   private handleDragStart(e: DragEvent) {
     e.dataTransfer?.setData('text/plain', this.step.id);
     if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
     (e.currentTarget as HTMLElement).style.opacity = '0.4';
-    (e.currentTarget as HTMLElement).style.transform = 'scale(0.98)';
   }
 
   private handleDragEnd(e: DragEvent) {
     (e.currentTarget as HTMLElement).style.opacity = '1';
-    (e.currentTarget as HTMLElement).style.transform = '';
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -286,10 +253,10 @@ export class SopStepCard extends LitElement {
   private truncateUrl(url: string): string {
     try {
       const u = new URL(url);
-      const path = u.pathname.length > 30 ? u.pathname.slice(0, 30) + '...' : u.pathname;
+      const path = u.pathname.length > 25 ? u.pathname.slice(0, 25) + '...' : u.pathname;
       return u.hostname + path;
     } catch {
-      return url.slice(0, 50);
+      return url.slice(0, 40);
     }
   }
 }
