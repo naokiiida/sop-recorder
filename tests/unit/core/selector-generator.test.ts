@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   generateSelectors,
   _cssEscape,
+  _xpathEscape,
   type ElementLike,
 } from '~/core/selector-generator';
 
@@ -285,6 +286,43 @@ describe('generateSelectors', () => {
       expect(_cssEscape('a.b')).toBe('a\\.b');
       expect(_cssEscape('x[0]')).toBe('x\\[0\\]');
       expect(_cssEscape('a:b')).toBe('a\\:b');
+    });
+  });
+
+  describe('xpathEscape helper', () => {
+    it('wraps value in single quotes when no single quote present', () => {
+      expect(_xpathEscape('hello world')).toBe("'hello world'");
+    });
+
+    it('wraps value in double quotes when single quote present but no double quote', () => {
+      expect(_xpathEscape("it's here")).toBe('"it\'s here"');
+    });
+
+    it('uses concat() when both single and double quotes are present', () => {
+      const result = _xpathEscape(`it's a "test"`);
+      expect(result).toContain('concat(');
+      expect(result).toContain(`"'"`);
+    });
+
+    it('handles empty string', () => {
+      expect(_xpathEscape('')).toBe("''");
+    });
+  });
+
+  describe('fallback path when element not in parent children', () => {
+    it('handles element whose reference is not found in parent children (fallback index)', () => {
+      // Create a parent with no children but point el's parentElement to it
+      const orphanParent = createElement({ tagName: 'DIV', children: [] });
+      const orphan = createElement({
+        tagName: 'SPAN',
+        parentElement: orphanParent,
+        children: [],
+      });
+      // orphan is NOT in orphanParent.children — hits the fallback return in nthOfTypeIndex
+      const result = generateSelectors(orphan);
+      // Should still produce a valid selector without throwing
+      expect(typeof result.css).toBe('string');
+      expect(typeof result.xpath).toBe('string');
     });
   });
 

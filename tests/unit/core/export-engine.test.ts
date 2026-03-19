@@ -126,6 +126,47 @@ describe('generateMarkdown', () => {
     expect(md).toContain('**Steps:** 1');
     expect(md).toContain('**Starting URL:** https://example.com');
   });
+
+  it('generates markdown for a recording with 5 steps', () => {
+    const steps = Array.from({ length: 5 }, (_, i) =>
+      makeStep({ title: `Step ${i + 1}`, sequenceNumber: i + 1 }),
+    );
+    const md = generateMarkdown(makeRecording(steps), 'zip');
+
+    expect(md).toContain('**Steps:** 5');
+    expect(md).toContain('## Step 1:');
+    expect(md).toContain('## Step 5:');
+    expect(md).toContain('![Step 1](screenshots/step-01.jpg)');
+    expect(md).toContain('![Step 5](screenshots/step-05.jpg)');
+  });
+
+  it('generates zero-padded filenames for 50 steps', () => {
+    const steps = Array.from({ length: 50 }, (_, i) =>
+      makeStep({ title: `Step ${i + 1}`, sequenceNumber: i + 1 }),
+    );
+    const md = generateMarkdown(makeRecording(steps), 'zip');
+
+    expect(md).toContain('**Steps:** 50');
+    expect(md).toContain('![Step 1](screenshots/step-01.jpg)');
+    expect(md).toContain('![Step 10](screenshots/step-10.jpg)');
+    expect(md).toContain('![Step 50](screenshots/step-50.jpg)');
+    // Ensure NO unpadded references like step-5.jpg
+    expect(md).not.toMatch(/screenshots\/step-5\.jpg/);
+  });
+
+  it('includes Starting URL field even when startUrl is empty', () => {
+    const recording = makeRecording([makeStep()], {
+      metadata: {
+        startUrl: '',
+        startPageTitle: 'Example',
+        browserVersion: 'Chrome/130',
+        stepCount: 1,
+      },
+    });
+    const md = generateMarkdown(recording, 'zip');
+    // Export engine always emits the field; value is just empty
+    expect(md).toContain('**Starting URL:**');
+  });
 });
 
 describe('sanitizeFilename', () => {

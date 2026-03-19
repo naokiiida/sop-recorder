@@ -104,7 +104,7 @@ development_status:
   7-1-comprehensive-error-handling: review
   7-2-implement-accessibility-compliance: review
   7-3-implement-performance-optimization: review
-  7-4-write-core-module-unit-tests: ready-for-dev
+  7-4-write-core-module-unit-tests: review
   7-5-write-e2e-tests-for-critical-path: backlog
   epic-7-retrospective: optional
 

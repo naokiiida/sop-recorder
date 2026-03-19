@@ -211,6 +211,30 @@ describe('StepManager', () => {
       const step = manager.addStep(makeEvent({ type: 'keypress' }), 'b');
       expect(step.title).toBe('Pressed key');
     });
+
+    it('dblclick without accessible name', () => {
+      const step = manager.addStep(
+        makeEvent({ type: 'dblclick', accessibleName: '', tagName: 'TR' }),
+        'b',
+      );
+      expect(step.title).toBe('Double-clicked element');
+    });
+
+    it('select without accessible name', () => {
+      const step = manager.addStep(
+        makeEvent({ type: 'select', accessibleName: '', tagName: 'SELECT' }),
+        'b',
+      );
+      expect(step.title).toBe('Selected option');
+    });
+
+    it('check without accessible name', () => {
+      const step = manager.addStep(
+        makeEvent({ type: 'check', accessibleName: '', tagName: 'INPUT', elementType: 'checkbox' }),
+        'b',
+      );
+      expect(step.title).toBe('Toggled checkbox');
+    });
   });
 
   // ── updateStep ──────────────────────────────────────────────────────────

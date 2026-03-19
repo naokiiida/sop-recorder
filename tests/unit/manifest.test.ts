@@ -11,6 +11,7 @@ interface Manifest {
   background: { service_worker: string };
   side_panel: { default_path: string };
   content_scripts: { matches: string[]; js: string[] }[];
+  commands?: Record<string, { suggested_key?: { default: string }; description: string }>;
 }
 
 describe('manifest.json validation', () => {
@@ -55,5 +56,11 @@ describe('manifest.json validation', () => {
     const firstScript = manifest.content_scripts[0];
     expect(firstScript).toBeDefined();
     expect(firstScript?.js.length).toBeGreaterThan(0);
+  });
+
+  it('configures toggle-recording command', () => {
+    expect(manifest.commands).toBeDefined();
+    expect(manifest.commands!['toggle-recording']).toBeDefined();
+    expect(manifest.commands!['toggle-recording']!.description).toBeTruthy();
   });
 });

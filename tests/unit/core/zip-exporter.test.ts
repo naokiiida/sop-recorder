@@ -132,4 +132,19 @@ describe('exportAsZip', () => {
 
     expect(zip.file('sop.md')).not.toBeNull();
   });
+
+  it('includes "Screenshot unavailable" in sop.md for steps with missing blobs', async () => {
+    const steps = [
+      makeStep({ screenshotBlobKey: '' }),
+      makeStep({ screenshotBlobKey: 'key-missing', title: 'No blob' }),
+    ];
+    const recording = makeRecording(steps);
+
+    const fetchBlob: BlobFetcher = vi.fn(async () => null);
+    const { blob } = await exportAsZip(recording, fetchBlob);
+    const zip = await JSZip.loadAsync(blob);
+
+    const mdContent = await zip.file('sop.md')!.async('string');
+    expect(mdContent).toContain('*(Screenshot unavailable)*');
+  });
 });
