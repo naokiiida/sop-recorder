@@ -39,7 +39,7 @@ export class SopStepCard extends LitElement {
       : 'sop-thumbnail sop-thumbnail--edit';
 
     return html`
-      <div class="sop-step-card"
+      <article class="sop-step-card"
         draggable=${this.mode === 'edit' ? 'true' : 'false'}
         @dragstart=${this.mode === 'edit' ? this.handleDragStart : nothing}
         @dragend=${this.mode === 'edit' ? this.handleDragEnd : nothing}
@@ -88,7 +88,7 @@ export class SopStepCard extends LitElement {
           <!-- Description: edit mode only -->
           ${this.mode === 'edit' ? this.renderDescription() : nothing}
         </div>
-      </div>
+      </article>
     `;
   }
 

@@ -30,13 +30,13 @@ export class SopRecording extends LitElement {
           <strong style="color:${isPaused ? 'var(--sop-paused-color)' : 'var(--sop-recording-color)'};">
             ${isPaused ? 'Paused' : 'Recording'}
           </strong>
-          <span class="sop-muted" style="margin-left:auto;">
+          <small style="margin-left:auto;">
             ${this.steps.length} step${this.steps.length !== 1 ? 's' : ''}
-          </span>
+          </small>
         </div>
 
         <!-- Controls: PicoCSS group -->
-        <div role="group" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:var(--sop-gap-section);">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:var(--sop-gap-section);">
           ${isPaused
             ? html`<button class="secondary" @click=${this.handleResume}>&#9654; Resume</button>`
             : html`<button class="secondary" @click=${this.handlePause}>&#10074;&#10074; Pause</button>`}
