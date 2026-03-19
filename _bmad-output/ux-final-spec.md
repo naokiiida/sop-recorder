@@ -12,7 +12,7 @@
 |----------|--------|-----------|
 | h1 title | **Remove** | Chrome shows "SOP Recorder" in panel header |
 | Back navigation | **← button** | Side panel has no browser back; user needs explicit escape hatch |
-| Step card actions | **Hover-reveal** | Progressive disclosure; no extra click (vs overflow menu) |
+| Step card actions | **Hover-reveal** | Progressive disclosure; no extra click |
 | Delete icon | **Trash** | Universal; X conflicts with sidebar close |
 | URL | **Hidden** (tooltip on hover) | Users see the page; URL is noise in narrow panel |
 | D&D handle | **Implicit** | Cursor change + divider color is enough |
@@ -64,20 +64,20 @@ The side panel is a constrained context:
 
 ```css
 :root {
-  /* Text hierarchy */
-  --sop-text-secondary: #cbd5e0;    /* Up from #a0aec0 -- WCAG fix */
-  --sop-text-tertiary: #a0aec0;     /* Very faint hints */
+  /* Text hierarchy — use PicoCSS semantic elements and variables */
+  /* Secondary text: use <small> or var(--pico-muted-color) — auto light/dark */
+  /* Tertiary text: use var(--pico-muted-color) — auto light/dark */
 
   /* Actions */
   --sop-recording-color: #e53e3e;
   --sop-paused-color: #d69e2e;
 
   /* Cards */
-  --sop-card-hover: #3a4556;        /* Slightly lighter on hover */
+  --sop-card-hover: color-mix(in srgb, var(--pico-card-background-color) 85%, var(--pico-color) 15%);
 }
 ```
 
-Key change: muted text #a0aec0 -> #cbd5e0 for WCAG AA contrast (4.5:1+).
+Key change: removed hardcoded hex colors for text/card-hover; use PicoCSS variables that adapt to light/dark mode automatically.
 
 ---
 
@@ -90,18 +90,20 @@ Key change: muted text #a0aec0 -> #cbd5e0 for WCAG AA contrast (4.5:1+).
 Saved Recordings               h2
 
 +----------------------------+
-| My Design System       (⋮) |  Neutral card bg, white text
+| My Design System            |  Neutral card bg, white text
 +----------------------------+  Title only. No step count. No date.
 
 +----------------------------+
-| Login Flow             (⋮) |
+| Login Flow                  |
 +----------------------------+
 ```
 
 - **Start Recording**: Primary blue button (`class="contrast"` in PicoCSS or custom)
 - **Recording cards**: `<article>` with neutral background -- NOT blue
 - **Card content**: Title only (bold). No metadata in list.
-- **(⋮) menu**: Always visible; click opens Export/Delete options
+- **Click card**: Navigate to editor view for that recording
+- **Long-press (500ms)**: Enters multi-select mode for batch delete/export
+- **Multi-select mode**: Checkboxes appear on all cards; toolbar shows Delete/Export actions
 - **Empty state**: "Record your first SOP" + Start button
 
 ---
@@ -134,7 +136,7 @@ My Design System                h2, click-to-edit (dashed border on hover)
 5 steps · Created Mar 15        Metadata shown here (not in home list)
 
 +----------------------------+
-| [160x90] [1] Title    (⋮) |  Badge + title + hover-reveal menu
+| [160x90] [1] Title    (⋮) |  Badge + title + hover-reveal step menu
 |          URL (secondary)   |  URL visible in edit mode (secondary color)
 |          + Add description |  Editable affordance (dashed border)
 +----------------------------+
@@ -145,6 +147,7 @@ My Design System                h2, click-to-edit (dashed border on hover)
 +----------------------------+
 
 [Export as ZIP]                  Primary button, full width
+[Delete Recording]              Danger button, full width
 ```
 
 - Title editing: click h2 -> input appears. Use PicoCSS input default styling.
@@ -265,7 +268,9 @@ For empty description placeholder:
 2. Add ← back button (edit mode only)
 3. Start Recording: primary blue, cards: neutral
 4. Recording cards: title only (remove metadata)
-5. Step card: hover-reveal ⋮ menu with Move Up/Down/Delete
+5. Step card: hover-reveal ⋮ menu with Move Up/Down/Delete (editor view)
+5b. Home view: simple list + long-press (500ms) multi-select for batch delete/export
+5c. Delete Recording button in editor view
 6. Delete icon: 🗑 trash
 7. URL: hidden in live, secondary in edit
 8. Text contrast fix: secondary text to #cbd5e0

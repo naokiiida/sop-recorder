@@ -226,6 +226,83 @@ article {
   background: rgba(229, 62, 62, 0.1);
 }
 
+/* ── Dropdown trigger (overflow menu in recording cards) ───────────────────── */
+
+.sop-dropdown-trigger {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--pico-muted-color);
+  border-radius: 4px;
+  line-height: 1;
+  list-style: none;
+}
+
+.sop-dropdown-trigger:hover {
+  color: var(--pico-color);
+  background: var(--sop-editable-hover-bg);
+}
+
+.sop-dropdown-trigger::-webkit-details-marker,
+.sop-dropdown-trigger::marker {
+  display: none;
+  content: '';
+}
+
+details.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+details.dropdown > ul {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  min-width: 140px;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  background: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: none;
+}
+
+details.dropdown[open] > ul {
+  display: block;
+}
+
+details.dropdown li a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--pico-color);
+  text-decoration: none;
+  transition: background 0.1s;
+}
+
+details.dropdown li a:hover {
+  background: var(--sop-editable-hover-bg);
+}
+
+/* ── Danger button (stop recording, destructive actions) ───────────────────── */
+
+.sop-btn-danger {
+  background: var(--sop-recording-color);
+  border-color: var(--sop-recording-color);
+  color: #fff;
+}
+
+.sop-btn-danger:hover {
+  background: color-mix(in srgb, var(--sop-recording-color) 85%, #000 15%);
+  border-color: color-mix(in srgb, var(--sop-recording-color) 85%, #000 15%);
+}
+
 /* ── Editable field affordance ──────────────────────────────────────────────── */
 
 .sop-editable {

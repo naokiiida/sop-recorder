@@ -40,11 +40,11 @@ export class SopRecording extends LitElement {
           ${isPaused
             ? html`<button class="secondary" @click=${this.handleResume}>&#9654; Resume</button>`
             : html`<button class="secondary" @click=${this.handlePause}>&#10074;&#10074; Pause</button>`}
-          <button style="background:var(--sop-recording-color);border-color:var(--sop-recording-color);color:#fff;" @click=${this.handleStop}>&#9632; Stop</button>
+          <button class="sop-btn-danger" @click=${this.handleStop}>&#9632; Stop</button>
         </div>
 
         <!-- Live step feed (newest first) -->
-        <div style="display:flex;flex-direction:column;gap:var(--sop-gap-card);" role="log" aria-label="Captured steps" aria-live="polite">
+        <div class="sop-stack sop-stack--tight" role="log" aria-label="Captured steps" aria-live="polite">
           ${[...this.steps].reverse().map(
             (step) => html`<sop-step-card .step=${step} mode="live"></sop-step-card>`,
           )}

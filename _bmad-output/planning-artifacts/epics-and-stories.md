@@ -658,8 +658,11 @@ So that users can start new recordings or open saved ones.
 **And** each recording card shows: title, step count, formatted date
 **And** recording cards are sorted by updatedAt descending
 **And** clicking a recording card navigates to the editor view for that recording
-**And** each card has an overflow menu `[...]` with: Rename, Export, Delete options
+**And** clicking a recording card navigates to the editor view
+**And** long-pressing (500ms) a recording card enters multi-select mode with checkboxes on all cards
+**And** in multi-select mode, a toolbar appears with batch Delete and Export actions
 **And** delete uses an undo toast (5-second window) instead of a confirmation dialog
+**And** the editor view includes a "Delete Recording" button for single-recording deletion
 **And** "Start Recording" button dispatches a custom event that sop-app handles
 **And** all elements use semantic HTML (PicoCSS `<article>`, `<button>`, `<section>`, `<h2>`)
 

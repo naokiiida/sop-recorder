@@ -59,7 +59,7 @@ export class SopEditor extends LitElement {
 
         <!-- Step list (sequential: step 1 first) -->
         <div
-          style="display:flex;flex-direction:column;gap:var(--sop-gap-card);"
+          class="sop-stack sop-stack--tight"
           @dragover=${this.handleDragOver}
           @dragleave=${this.handleDragLeave}
           @drop=${this.handleDrop}
@@ -89,6 +89,10 @@ export class SopEditor extends LitElement {
               Export as ZIP
             </button>`
           : nothing}
+
+        <button class="sop-btn-danger" style="width:100%;margin-top:8px;" @click=${this.handleDeleteRecording}>
+          ${icon(Trash2, 14)} Delete Recording
+        </button>
 
         <!-- Undo toast (🗑 consistent delete feedback) -->
         ${this.undoStep
@@ -244,5 +248,13 @@ export class SopEditor extends LitElement {
 
   private handleExport() {
     this.dispatchEvent(new CustomEvent('export-recording', { bubbles: true, composed: true }));
+  }
+
+  private handleDeleteRecording() {
+    const recordingId = this.recording?.id;
+    if (!recordingId) return;
+    this.dispatchEvent(
+      new CustomEvent('delete-recording', { detail: { recordingId }, bubbles: true, composed: true }),
+    );
   }
 }

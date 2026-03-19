@@ -32,35 +32,26 @@ Progressive disclosure reduces cognitive load by hiding secondary actions until 
 
 ### 1.2 Home View Recording Cards
 
-**Default state:**
-```css
-.recording-card-actions {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease-in;
-}
-```
+Recording cards on the home view are simple clickable list items -- no per-card action menus.
 
-**Hover state:**
+**Interaction model:**
+- **Click**: Navigate to editor view for that recording
+- **Long-press (500ms)**: Enter multi-select mode for batch delete/export
+- **Multi-select mode**: Checkboxes appear on all cards; toolbar shows Delete/Export actions; tap cards to toggle selection
+
+**Hover state (visual feedback only):**
 ```css
 .recording-card:hover {
   background: var(--pico-muted-border-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
-
-.recording-card:hover .recording-card-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
 ```
 
-**Touch handling:**
+**Long-press detection:**
 ```css
-@media (hover: none) {
-  .recording-card-actions {
-    opacity: 1;  /* Always visible on touch */
-    pointer-events: auto;
-  }
+.recording-card {
+  -webkit-touch-callout: none; /* Prevent native context menu on long-press */
+  user-select: none;
 }
 ```
 
@@ -178,7 +169,7 @@ Drag-and-drop should be secondary, not primary. Users who discover it will use i
 **Current audit (FAIL):**
 - Delete button: ~20px -- too small
 - Up/Down buttons: ~20px -- too small
-- "..." menu button: ~28px -- too small
+- Step action menu button: ~28px -- too small
 
 **Fix:** Increase all buttons to 44x44px minimum:
 
@@ -251,10 +242,10 @@ Drag-and-drop should be secondary, not primary. Users who discover it will use i
 | Pattern | Product | How They Do It |
 |---------|---------|----------------|
 | **Hover reveal** | Reddit, Trello, Notion | Actions appear on hover; always visible on touch |
-| **Three-dot menu** | Gmail, Slack, Twitter | Icon visible; dropdown on click |
+| **Long-press multi-select** | iOS Photos, Google Photos, Files app | Long-press enters selection mode for batch actions |
 | **Context menu** | Figma, Chrome DevTools | Right-click or gear icon |
 
-**Recommendation:** Hover-reveal for step cards, three-dot menu for recording cards.
+**Recommendation:** Hover-reveal for step cards (editor view). For recording cards on home view, use simple clickable list items with long-press (500ms) to enter multi-select mode for batch delete/export.
 
 ---
 
@@ -274,7 +265,7 @@ Drag-and-drop should be secondary, not primary. Users who discover it will use i
 | Trash | Deletion | "Delete step/recording" |
 | ⋮⋮ | Drag | Drag handle on step card |
 | Up/Down | Keyboard | Keyboard-only reorder buttons |
-| ... | Menu | "More actions" (three-dot menu) |
+| ... | Menu | "More actions" (step card menu in editor view) |
 
 ### 5.3 Icon Style
 

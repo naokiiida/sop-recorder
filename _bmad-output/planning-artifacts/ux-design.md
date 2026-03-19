@@ -189,17 +189,17 @@ interface AppState {
 │  ┌──────────────────────────┐│
 │  │ Salesforce Contact Setup ││
 │  │ 12 steps · Mar 18, 2026  ││
-│  │                    [···] ││
+│  │                          ││
 │  └──────────────────────────┘│
 │  ┌──────────────────────────┐│
 │  │ Jira Ticket Workflow     ││
 │  │ 8 steps · Mar 17, 2026   ││
-│  │                    [···] ││
+│  │                          ││
 │  └──────────────────────────┘│
 │  ┌──────────────────────────┐│
 │  │ HR Onboarding Process    ││
 │  │ 22 steps · Mar 15, 2026  ││
-│  │                    [···] ││
+│  │                          ││
 │  └──────────────────────────┘│
 │                              │
 └──────────────────────────────┘
@@ -207,9 +207,10 @@ interface AppState {
 
 **Component behavior:**
 - "Start Recording" button is always visible and prominent (PicoCSS primary `<button>`)
-- Recording cards show: title, step count, date, overflow menu (rename, delete, export)
+- Recording cards show: title, step count, date
 - Click on card → navigate to Edit view for that recording
-- Overflow menu `[···]` → small dropdown: Rename, Export, Delete
+- Long-press (500ms) on card → enters multi-select mode for batch delete/export
+- Multi-select mode: checkboxes appear on all cards; toolbar shows Delete/Export actions
 - Delete from list → undo toast (5-second window), not confirmation dialog
 - List sorted by `updatedAt` descending (most recent first)
 
@@ -750,7 +751,7 @@ Avoid icon libraries for v1. Use Unicode symbols and emoji for minimal footprint
 | Close | ✕ (U+2715) | Text "Close" |
 | Drag handle | ≡ (U+2261) | Three bars CSS |
 | Settings | ⚙ (U+2699) | Text "Settings" |
-| More/overflow | ··· (U+00B7×3) | Text "More" |
+| More/step menu | ··· (U+00B7×3) | Text "More" (step card actions in editor) |
 | Copy | 📋 (clipboard) | Text "Copy" |
 
 For v2, consider migrating to a lightweight SVG icon set (Lucide or Heroicons) for visual consistency.

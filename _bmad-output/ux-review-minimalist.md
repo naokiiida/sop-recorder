@@ -54,7 +54,7 @@ Key findings:
 |---------|------------------------|----------|-----------------|
 | **Step count badge** ("5 steps") | Partially | Users scanning saved recordings care about: (1) What is this? (2) Is it recent? Step count is metadata that matters only when *opening* a recording. | Move to hover tooltip or open-on-click detail view. Show only on editor view where it's actionable. |
 | **Creation date** (Mar 19) | Yes | Helps locate "which one is recent?" But format is sub-optimal. | Keep, but use relative dates ("Today", "Yesterday", "3 days ago") for faster cognitive load. |
-| **Three-dot menu** | Yes | Good progressive disclosure pattern. | Keep menu, but add a subtle visual cue (icon appears on hover for mouse; always visible on touch). |
+| **Per-card actions** | Replaced | Old three-dot menu removed. Recording cards are now simple clickable list items. Long-press (500ms) enters multi-select mode for batch delete/export. Delete Recording button available in editor view. | Simpler interaction model; reduces per-card visual noise. |
 
 #### "Start Recording" Button
 
@@ -184,8 +184,8 @@ Saves ~0.85rem per card. In a 400px panel, that's ~20% more breathing room.
 **Proposed hierarchy:**
 1. **Prominent "Start Recording"** with visual distinction (contrasting color)
 2. Simple recording list: **Title only** (or Title + small thumbnail)
-3. On hover: tooltip shows "5 steps - Edited Mar 19"
-4. On click: enter editor, where step count becomes primary metadata
+3. On click: enter editor, where step count becomes primary metadata
+4. Long-press (500ms): enter multi-select mode for batch delete/export
 
 ### 2.2 Recording View
 
@@ -218,9 +218,14 @@ Saves ~0.85rem per card. In a 400px panel, that's ~20% more breathing room.
 
 **Proposal: Hide by Default, Show on Interaction**
 
-For mouse users (hover): Show "..." button on card hover, which opens context menu with Move Up, Move Down, Delete, View Screenshot.
+For step cards in the editor view:
+- Mouse users (hover): Show "..." button on card hover, which opens context menu with Move Up, Move Down, Delete.
+- Touch users: Always show "..." button (`@media (hover: none)`).
 
-For touch users: Always show "..." button (`@media (hover: none)`).
+For recording cards on the home view:
+- Simple clickable list items (click to navigate to editor).
+- Long-press (500ms) enters multi-select mode for batch delete/export.
+- Delete Recording button is also available in the editor view.
 
 **Benefit:**
 - Removes visual clutter from default view
@@ -229,13 +234,17 @@ For touch users: Always show "..." button (`@media (hover: none)`).
 
 ### 3.3 Delete Action
 
-**Move delete to context menu.** Combined with the undo toast already implemented, this provides "forgiveness over confirmation."
+**Delete actions use two patterns:**
 
-Delete flow:
+For individual steps (editor view): Move delete to step card context menu ("..."). Combined with the undo toast, this provides "forgiveness over confirmation."
+
+Step delete flow:
 1. Click "..." menu -> "Delete"
 2. Step is immediately deleted
 3. Toast appears: "Step deleted [Undo]"
 4. User has 5 seconds to undo
+
+For recordings: Use long-press (500ms) multi-select on home view for batch delete, or "Delete Recording" button in editor view.
 
 ### 3.4 Home View -- Visual Distinction
 
@@ -256,7 +265,7 @@ Delete flow:
 | Home view | "Start" button doesn't visually dominate | Add contrast styling |
 | Recording | Controls are clear; feedback is good | No changes |
 | Recording -> Editor | Automatic transition after "Stop" | Good |
-| Editor | Reorder/delete controls are always visible, cluttering UI | Hide controls in menu |
+| Editor | Reorder/delete controls are always visible, cluttering UI | Hide step controls in "..." menu; add Delete Recording button |
 | Editor -> Export | Button is visible; low friction | Good |
 
 ### Secondary Journey: "Review and Clean Up Recording"
@@ -264,7 +273,7 @@ Delete flow:
 | Step | Friction | Proposal |
 |------|----------|----------|
 | Home view | Step count metadata is secondary info | Move to tooltip |
-| Editor | Too many inline controls | Hide controls in context menu |
+| Editor | Too many inline controls | Hide step controls in context menu; Delete Recording button at bottom |
 
 ---
 
@@ -278,7 +287,7 @@ Delete flow:
 | **Scribe** | Drag-and-drop | Hover menu > Delete | Confirmation dialog |
 | **Tango** | Drag-and-drop or "..." menu | Hidden in menu | Undo toast (5s) |
 | **Loom** | Drag-and-drop (clips) | Inline delete + confirm | Undo toast |
-| **SOP Recorder (proposed)** | Drag-and-drop ("..." hidden) | Hidden in "..." menu; undo toast | Undo toast (5s) |
+| **SOP Recorder (proposed)** | Drag-and-drop (steps); long-press multi-select (recordings) | Steps: hidden in "..." menu; Recordings: multi-select batch delete or editor Delete button; undo toast | Undo toast (5s) |
 
 ### Metadata Density in Lists
 
@@ -286,7 +295,7 @@ Delete flow:
 |---|---|---|
 | **Loom** | Thumbnail, title, duration | Fast |
 | **Tango** | Thumbnail, title only | Very fast |
-| **SOP Recorder (proposed)** | Title, "..." menu, hover shows metadata | Fast |
+| **SOP Recorder (proposed)** | Title only; long-press for multi-select | Very fast |
 
 ### Header/Navigation
 
@@ -311,16 +320,17 @@ Delete flow:
 1. URL in live card (show on hover tooltip)
 2. URL in edit card (show on hover tooltip)
 3. Step count in home view card (show on hover)
-4. Delete/reorder actions (show in "..." context menu on hover)
+4. Delete/reorder actions in step cards (show in "..." context menu on hover in editor view)
 
 **Add:**
 1. `class="contrast"` to "Start Recording" button
-2. Hover state for step cards: show "..." menu
-3. Context menu with options: Move Up, Move Down, Delete, View Full
+2. Long-press (500ms) multi-select mode on home view recording list for batch delete/export
+3. Delete Recording button in editor view
+4. Hover state for step cards in editor: show "..." menu with Move Up, Move Down, Delete
 
 **Fixes:**
 1. Tighten input padding (title edit boxes) to prevent visual jump
-2. Add `@media (hover: none)` rule to always show "..." on touch devices
+2. Add `@media (hover: none)` rule to always show "..." on touch devices (step cards in editor)
 3. Adjust gap between "Start Recording" button and recording list (1rem separator)
 
 ### Secondary Changes (Future)

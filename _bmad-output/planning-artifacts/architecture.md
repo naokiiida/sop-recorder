@@ -764,7 +764,7 @@ The `RecordedStep[]` data model already captures all fields needed for these ada
 <sop-app>                         # Root shell, manages view routing
   |
   +-- <sop-home>                  # Recording list + "Start Recording" CTA
-  |     +-- recording cards       # Title, date, step count per recording
+  |     +-- recording cards       # Simple clickable list; long-press (500ms) for multi-select
   |
   +-- <sop-recording>             # Active recording view
   |     +-- recording controls    # Start/Stop/Pause buttons + timer

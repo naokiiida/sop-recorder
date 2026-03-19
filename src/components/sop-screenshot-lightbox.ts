@@ -4,7 +4,7 @@ import { IndexedDBBlobStore } from '../adapters/chrome/blob-store.js';
 
 /**
  * Full-size screenshot lightbox overlay.
- * Fetches the screenshot blob from IndexedDB and displays it.
+ * Uses semantic <dialog> for PicoCSS styling (backdrop, centering, close button).
  */
 @customElement('sop-screenshot-lightbox')
 export class SopScreenshotLightbox extends LitElement {
@@ -39,30 +39,23 @@ export class SopScreenshotLightbox extends LitElement {
 
   override render() {
     return html`
-      <div
-        role="dialog"
-        aria-label="Screenshot preview"
-        aria-modal="true"
-        style="position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);cursor:pointer;"
-        @click=${this.handleBackdropClick}
-      >
-        <button
-          @click=${this.close}
-          aria-label="Close"
-          style="position:absolute;top:0.5rem;right:0.5rem;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:1001;padding:0.5rem;"
-        >&times;</button>
-
-        ${this.loading
-          ? html`<p style="color:#fff;">Loading...</p>`
-          : this.imageUrl
-            ? html`<img
-                src=${this.imageUrl}
-                alt="Full-size screenshot"
-                style="max-width:95%;max-height:95%;object-fit:contain;cursor:default;border-radius:4px;"
-                @click=${(e: Event) => e.stopPropagation()}
-              />`
-            : html`<p style="color:#fff;">Screenshot not available</p>`}
-      </div>
+      <dialog open @click=${this.handleBackdropClick}>
+        <article @click=${(e: Event) => e.stopPropagation()} style="max-width:95vw;max-height:95vh;overflow:auto;">
+          <header>
+            <button aria-label="Close" rel="prev" @click=${this.close}></button>
+            <p><strong>Screenshot</strong></p>
+          </header>
+          ${this.loading
+            ? html`<p>Loading...</p>`
+            : this.imageUrl
+              ? html`<img
+                  src=${this.imageUrl}
+                  alt="Full-size screenshot"
+                  style="max-width:100%;max-height:80vh;object-fit:contain;border-radius:4px;"
+                />`
+              : html`<p>Screenshot not available</p>`}
+        </article>
+      </dialog>
     `;
   }
 

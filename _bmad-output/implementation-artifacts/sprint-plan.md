@@ -180,7 +180,7 @@
 - PicoCSS classless styles render correctly with dark/light mode support
 - `<sop-app>` routes between Home, Recording, and Edit views via state-driven transitions
 - View Transitions API used for animated view switches (with fallback)
-- Home view shows empty state or recording list with overflow menu (rename, export, delete)
+- Home view shows empty state or simple recording list (click to open, long-press 500ms for multi-select batch delete/export)
 - Recording view shows red pulse indicator, live step feed (newest first), pause/stop controls
 - Step card has live mode (read-only) and edit mode (inline editing, reorder buttons, drag handle, delete)
 - Editor view supports step editing, reordering (buttons + DnD), deletion with undo toast, and export trigger

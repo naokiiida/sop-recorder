@@ -53,7 +53,7 @@ export class SopStepCard extends LitElement {
                 class=${thumbClass}
                 @click=${this.mode === 'edit' ? this.handleThumbnailClick : nothing}
               />`
-            : html`<div class=${thumbClass} style="background:var(--pico-muted-border-color);display:flex;align-items:center;justify-content:center;color:var(--sop-text-tertiary);font-size:0.65rem;">No img</div>`}
+            : html`<div class=${thumbClass} style="background:var(--pico-muted-border-color);display:flex;align-items:center;justify-content:center;color:var(--pico-muted-color);font-size:0.65rem;">No img</div>`}
         </div>
 
         <!-- Content -->
@@ -80,7 +80,7 @@ export class SopStepCard extends LitElement {
 
           <!-- URL: hidden in live, secondary in edit -->
           ${this.mode === 'edit'
-            ? html`<div class="sop-muted sop-truncate" style="font-size:0.8rem;color:var(--sop-text-tertiary);" title=${this.step.pageUrl}>
+            ? html`<div class="sop-muted sop-truncate" style="font-size:0.8rem;color:var(--pico-muted-color);" title=${this.step.pageUrl}>
                 ${this.truncateUrl(this.step.pageUrl)}
               </div>`
             : nothing}
