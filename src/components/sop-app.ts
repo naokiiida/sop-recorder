@@ -24,7 +24,7 @@ export class SopApp extends LitElement {
   override render() {
     return html`
       ${this.ctrl.viewState === 'edit'
-        ? html`<button class="sop-back-button" style="margin-bottom:8px;" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>`
+        ? html`<button class="sop-back-button" style="margin-bottom:var(--sop-gap-card);" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>`
         : nothing}
 
       ${this.ctrl.error
