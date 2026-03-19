@@ -34,7 +34,7 @@ export class SopEditor extends LitElement {
     return html`
       <section>
         <!-- Editable title -->
-        <div style="margin-bottom:var(--sop-gap-section);">
+        <header style="margin-bottom:var(--sop-gap-section);">
           ${this.editingTitle
             ? html`<input
                 type="text"
@@ -55,10 +55,10 @@ export class SopEditor extends LitElement {
           <small class="sop-muted">
             ${stepCount} step${stepCount !== 1 ? 's' : ''}${createdDate ? ` \u00B7 ${createdDate}` : ''}
           </small>
-        </div>
+        </header>
 
         <!-- Step list (sequential: step 1 first) -->
-        <div
+        <section
           class="sop-stack sop-stack--tight"
           @dragover=${this.handleDragOver}
           @dragleave=${this.handleDragLeave}
@@ -78,10 +78,10 @@ export class SopEditor extends LitElement {
               ></sop-step-card>
             `,
           )}
-        </div>
+        </section>
 
         ${stepCount === 0
-          ? html`<p class="sop-muted" style="text-align:center;padding:2rem 0;">No steps recorded.</p>`
+          ? html`<p class="sop-muted sop-empty-state">No steps recorded.</p>`
           : nothing}
 
         ${stepCount > 0
@@ -90,17 +90,17 @@ export class SopEditor extends LitElement {
             </button>`
           : nothing}
 
-        <button class="sop-btn-danger" style="width:100%;margin-top:8px;" @click=${this.handleDeleteRecording}>
+        <button class="sop-btn-danger" style="width:100%;margin-top:var(--sop-gap-card);" @click=${this.handleDeleteRecording}>
           ${icon(Trash2, 14)} Delete Recording
         </button>
 
         <!-- Undo toast (🗑 consistent delete feedback) -->
         ${this.undoStep
           ? html`
-            <div class="sop-undo-toast" role="alert">
+            <aside class="sop-undo-toast" role="alert">
               <span>${icon(Trash2, 14)} Step deleted</span>
               <button class="secondary outline" style="padding:4px 10px;font-size:0.8rem;" @click=${this.handleUndo}>Undo</button>
-            </div>
+            </aside>
           `
           : nothing}
       </section>
