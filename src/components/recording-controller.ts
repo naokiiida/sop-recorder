@@ -38,6 +38,9 @@ export class RecordingController implements ReactiveController {
   /** Last error message */
   error: string | null = null;
 
+  /** Whether we're reconnecting to the background */
+  reconnecting = false;
+
   constructor(host: ReactiveControllerHost) {
     this.host = host;
     host.addController(this);
@@ -60,18 +63,30 @@ export class RecordingController implements ReactiveController {
       this.port = browser.runtime.connect({ name: 'sidepanel' });
 
       this.port.onMessage.addListener((msg: BackgroundToPanelMessage) => {
-        this.handleMessage(msg);
+        try {
+          this.handleMessage(msg);
+        } catch (err) {
+          console.error('[SOP Recorder] Error handling message:', err);
+        }
       });
 
       this.port.onDisconnect.addListener(() => {
         this.port = null;
+        this.reconnecting = true;
+        this.host.requestUpdate();
         // Attempt reconnect after a short delay
         setTimeout(() => {
           if (!this.port) this.connect();
         }, 1000);
       });
 
-      // Request initial state
+      // Clear reconnecting state
+      if (this.reconnecting) {
+        this.reconnecting = false;
+        this.host.requestUpdate();
+      }
+
+      // Request initial state (also serves as full state sync after reconnect)
       this.send({ type: 'GET_STATE' });
       this.send({ type: 'LIST_RECORDINGS' });
     } catch (err) {
@@ -125,6 +140,34 @@ export class RecordingController implements ReactiveController {
         this.loadedRecording = msg.recording;
         this.steps = msg.recording.steps;
         this.viewState = 'edit';
+        break;
+
+      case 'SCREENSHOT_UNAVAILABLE':
+        // Transient warning — step was recorded but screenshot failed
+        this.error = 'Screenshot unavailable for this step';
+        setTimeout(() => {
+          this.error = null;
+          this.host.requestUpdate();
+        }, 3000);
+        break;
+
+      case 'QUOTA_WARNING':
+        this.error = `Storage is ${Math.round(msg.percentUsed * 100)}% full. Export or delete old recordings to free space.`;
+        // Persistent — no auto-clear for quota warnings
+        break;
+
+      case 'QUOTA_FULL':
+        this.error = 'Storage full — export or delete old recordings to continue.';
+        break;
+
+      case 'PAGE_RESTRICTED':
+        this.error = 'Cannot record on this page';
+        break;
+
+      case 'PAGE_RECORDABLE':
+        if (this.error === 'Cannot record on this page') {
+          this.error = null;
+        }
         break;
 
       case 'EXPORT_READY':

@@ -169,4 +169,9 @@ export type BackgroundToPanelMessage =
   | { type: 'RECORDING_LIST'; recordings: RecordingMetadata[] }
   | { type: 'RECORDING_LOADED'; recording: Recording }
   | { type: 'EXPORT_READY'; blob: Blob; filename: string }
-  | { type: 'ERROR'; message: string };
+  | { type: 'ERROR'; message: string }
+  | { type: 'SCREENSHOT_UNAVAILABLE'; stepId: string }
+  | { type: 'QUOTA_WARNING'; percentUsed: number }
+  | { type: 'QUOTA_FULL' }
+  | { type: 'PAGE_RESTRICTED'; url: string }
+  | { type: 'PAGE_RECORDABLE' };

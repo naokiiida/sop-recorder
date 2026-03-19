@@ -15,6 +15,7 @@ import {
   Pause,
   Square,
   Download,
+  ImageOff,
 } from 'lucide';
 
 export {
@@ -26,6 +27,7 @@ export {
   Pause,
   Square,
   Download,
+  ImageOff,
 };
 
 /**

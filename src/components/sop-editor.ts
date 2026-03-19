@@ -21,6 +21,8 @@ export class SopEditor extends LitElement {
   @state() private undoStep: RecordedStep | null = null;
   @state() private undoTimer: ReturnType<typeof setTimeout> | null = null;
   @state() private copyFeedback = false;
+  @state() private exportError: string | null = null;
+  @state() private exportRetryCount = 0;
 
   override createRenderRoot() {
     return this;
@@ -88,8 +90,11 @@ export class SopEditor extends LitElement {
 
         ${stepCount > 0
           ? html`
-            <button class="contrast" style="width:100%;margin-top:var(--sop-gap-section);" @click=${this.handleExport}>
-              Export as ZIP
+            ${this.exportError
+              ? html`<p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;margin:var(--sop-gap-section) 0 8px;">${this.exportError}</p>`
+              : nothing}
+            <button class="contrast" style="width:100%;margin-top:${this.exportError ? '0' : 'var(--sop-gap-section)'};" @click=${this.handleExport}>
+              ${this.exportError ? 'Retry Export' : 'Export as ZIP'}
             </button>
             <button class="outline" style="width:100%;margin-top:var(--sop-gap-card);" @click=${this.handleCopyMarkdown}>
               ${this.copyFeedback ? 'Copied!' : 'Copy Markdown'}
@@ -253,7 +258,33 @@ export class SopEditor extends LitElement {
   }
 
   private handleExport() {
+    this.exportRetryCount++;
+
+    if (this.exportRetryCount > 2) {
+      // Second failure — fallback to Markdown-only export
+      this.handleMarkdownFallbackExport();
+      return;
+    }
+
+    this.exportError = null;
     this.dispatchEvent(new CustomEvent('export-recording', { bubbles: true, composed: true }));
+  }
+
+  private async handleMarkdownFallbackExport() {
+    const recording = this.recording ?? this.buildFallbackRecording();
+    if (!recording) return;
+    try {
+      const markdown = generateMarkdown(recording, 'clipboard');
+      await navigator.clipboard.writeText(markdown);
+      this.exportError = null;
+      this.exportRetryCount = 0;
+      this.copyFeedback = true;
+      setTimeout(() => { this.copyFeedback = false; }, 2000);
+      console.warn('[SOP Recorder] Export fallback: copied Markdown to clipboard (ZIP export failed)');
+    } catch (err) {
+      console.error('[SOP Recorder] Markdown fallback export also failed:', err);
+      this.exportError = 'Export failed. Please try again later.';
+    }
   }
 
   private async handleCopyMarkdown() {

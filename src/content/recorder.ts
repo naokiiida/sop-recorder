@@ -195,10 +195,31 @@ function buildCapturedEvent(
   };
 }
 
+// Event buffer for when message passing fails (e.g., SW restart)
+const eventBuffer: CapturedEvent[] = [];
+
 function sendEvent(event: CapturedEvent): void {
-  browser.runtime.sendMessage({ type: 'STEP_CAPTURED', payload: event }).catch((err: unknown) => {
-    console.error('[SOP Recorder] Failed to send event:', err);
+  browser.runtime.sendMessage({ type: 'STEP_CAPTURED', payload: event }).then(() => {
+    // On successful send, flush any buffered events
+    flushBuffer();
+  }).catch((err: unknown) => {
+    console.warn('[SOP Recorder] Failed to send event, buffering:', err);
+    eventBuffer.push(event);
   });
+}
+
+function flushBuffer(): void {
+  while (eventBuffer.length > 0) {
+    const buffered = eventBuffer.shift();
+    if (!buffered) break;
+    browser.runtime.sendMessage({ type: 'STEP_CAPTURED', payload: buffered }).catch((err: unknown) => {
+      // Re-buffer if still failing
+      console.warn('[SOP Recorder] Buffer flush failed, re-queuing:', err);
+      eventBuffer.unshift(buffered);
+    });
+    // Stop flushing if we can't send — avoid tight loop
+    break;
+  }
 }
 
 // ── Listener Management ─────────────────────────────────────────────────────

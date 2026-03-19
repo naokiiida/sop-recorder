@@ -312,6 +312,13 @@ article {
   font-size: 0.75rem;
 }
 
+.sop-screenshot-unavailable {
+  flex-direction: column;
+  gap: 4px;
+  color: var(--pico-muted-color);
+  font-size: 0.7rem;
+}
+
 .sop-step-card--vertical .sop-step-badge {
   position: absolute;
   bottom: 6px;

@@ -15,12 +15,13 @@ import {
   generateThumbnail,
   renderStepBadge,
 } from '../adapters/chrome/screenshot-adapter.js';
-import { ChromeTabAdapter } from '../adapters/chrome/tab-adapter.js';
+import { ChromeTabAdapter, isRestrictedUrl } from '../adapters/chrome/tab-adapter.js';
 import { ChromeMessageBus } from '../adapters/chrome/message-bus.js';
 import { ChromeAlarmAdapter } from '../adapters/chrome/alarm-adapter.js';
 import { QuotaManager } from '../adapters/chrome/quota-manager.js';
 import { ChromeDownloadAdapter } from '../adapters/chrome/download-adapter.js';
 import { exportAsZip } from '../core/zip-exporter.js';
+import { Logger } from '../core/logger.js';
 
 // ── Instantiate adapters and core modules ───────────────────────────────────
 
@@ -85,6 +86,38 @@ export default defineBackground(() => {
     console.log('[SOP Recorder] Command received:', command);
     if (command === 'toggle-recording') {
       toggleRecording().catch((err) => console.error('[SOP Recorder] toggleRecording error:', err));
+    }
+  });
+
+  // ── Tab URL change detection (for restricted page handling) ─────────
+  browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (tabId !== activeTabId || !changeInfo.url) return;
+    if (stateMachine.getState() !== 'recording' && stateMachine.getState() !== 'paused') return;
+
+    const url = changeInfo.url;
+    if (isRestrictedUrl(url)) {
+      // Navigated to restricted page mid-recording — pause
+      if (stateMachine.getState() === 'recording') {
+        Logger.warn('background', 'Pausing recording — navigated to restricted page', { url });
+        stateMachine.pause();
+        persistSessionState().catch(() => {});
+        activePanelPort?.postMessage({ type: 'STATE_UPDATE', state: 'paused' });
+        activePanelPort?.postMessage({ type: 'PAGE_RESTRICTED', url });
+      }
+    } else {
+      // Navigated away from restricted page — attempt re-injection and resume
+      if (stateMachine.getState() === 'paused') {
+        Logger.warn('background', 'Attempting re-injection after leaving restricted page', { url });
+        activePanelPort?.postMessage({ type: 'PAGE_RECORDABLE' });
+        tabAdapter.injectContentScript(tabId).then(() => {
+          tabAdapter.sendMessageToTab(tabId, { type: 'START_CAPTURE' }).catch(() => {});
+          stateMachine.resume();
+          persistSessionState().catch(() => {});
+          activePanelPort?.postMessage({ type: 'STATE_UPDATE', state: 'recording' });
+        }).catch((err) => {
+          Logger.error('background', 'Re-injection failed', { originalError: err });
+        });
+      }
     }
   });
 
@@ -183,17 +216,17 @@ async function startRecording(): Promise<void> {
   // Check storage quota before starting
   const quota = await quotaManager.checkQuota();
   if (quota.isFull) {
+    Logger.warn('background', 'Recording blocked — storage full', { percentUsed: quota.percentUsed });
+    activePanelPort?.postMessage({ type: 'QUOTA_FULL' });
     activePanelPort?.postMessage({
       type: 'ERROR',
-      message: 'Storage is full. Delete old recordings to free space.',
+      message: 'Storage full — export or delete old recordings to continue.',
     });
     return;
   }
   if (quota.isWarning) {
-    activePanelPort?.postMessage({
-      type: 'ERROR',
-      message: `Storage is ${Math.round(quota.percentUsed * 100)}% full. Consider deleting old recordings.`,
-    });
+    Logger.warn('background', 'Storage quota warning', { percentUsed: quota.percentUsed });
+    activePanelPort?.postMessage({ type: 'QUOTA_WARNING', percentUsed: quota.percentUsed });
     // Warning only — still allow recording
   }
 
@@ -217,12 +250,24 @@ async function startRecording(): Promise<void> {
   // Persist initial state
   await persistSessionState();
 
+  // Check if starting on a restricted page
+  if (isRestrictedUrl(tab.url)) {
+    Logger.warn('background', 'Cannot record on restricted page', { url: tab.url });
+    activePanelPort?.postMessage({ type: 'PAGE_RESTRICTED', url: tab.url });
+  }
+
   // Inject and start content script
   try {
     await tabAdapter.injectContentScript(tab.id);
     console.log('[SOP Recorder] Content script injected');
   } catch (err) {
-    console.log('[SOP Recorder] Content script injection skipped (may already exist):', err);
+    // Distinguish "already injected" from real injection failure
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (isRestrictedUrl(tab.url)) {
+      Logger.warn('background', 'Content script injection failed on restricted page', { url: tab.url });
+    } else {
+      Logger.warn('background', 'Content script injection skipped (may already exist)', { error: errMsg });
+    }
   }
 
   try {
@@ -336,6 +381,24 @@ async function handleStepCaptured(event: CapturedEvent, tabId: number): Promise<
 
   // 9. Notify panel
   activePanelPort?.postMessage({ type: 'STEP_ADDED', step });
+
+  // 10. Notify panel if screenshot was unavailable
+  if (!screenshotBlob) {
+    Logger.warn('background', 'Screenshot unavailable for step', { stepId: step.id, tabId });
+    activePanelPort?.postMessage({ type: 'SCREENSHOT_UNAVAILABLE', stepId: step.id });
+  }
+
+  // 11. Check quota after storing screenshot blob
+  if (screenshotBlobKey) {
+    try {
+      const postQuota = await quotaManager.checkQuota();
+      if (postQuota.isWarning) {
+        activePanelPort?.postMessage({ type: 'QUOTA_WARNING', percentUsed: postQuota.percentUsed });
+      }
+    } catch (err) {
+      Logger.error('background', 'Quota check after step failed', { originalError: err });
+    }
+  }
 }
 
 // ── Persistence ─────────────────────────────────────────────────────────────
@@ -394,11 +457,12 @@ async function recoverState(): Promise<void> {
       alarmAdapter.createKeepalive();
     }
 
-    console.log(
-      `[SOP Recorder] Recovered state: ${session.state}, ${session.steps.length} steps`,
-    );
+    Logger.warn('background', 'State recovered', { state: session.state, stepCount: session.steps.length });
+
+    // Notify connected panel with full state sync
+    sendStateToPanel();
   } catch (err) {
-    console.error('[SOP Recorder] State recovery failed:', err);
+    Logger.error('background', 'State recovery failed', { originalError: err });
   }
 }
 

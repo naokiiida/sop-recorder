@@ -1,6 +1,24 @@
 import type { ITabAdapter } from '../interfaces/index.js';
 import type { BackgroundToContentMessage } from '../../core/types.js';
 
+const RESTRICTED_URL_PATTERNS = [
+  /^chrome:\/\//,
+  /^chrome-extension:\/\//,
+  /^edge:\/\//,
+  /^about:/,
+  /^chrome\.google\.com\/webstore/,
+  /^devtools:\/\//,
+];
+
+/**
+ * Check if a URL is restricted (cannot inject content scripts).
+ */
+export function isRestrictedUrl(url: string): boolean {
+  // Strip protocol for pattern matching
+  const withoutProtocol = url.replace(/^https?:\/\//, '');
+  return RESTRICTED_URL_PATTERNS.some((pattern) => pattern.test(url) || pattern.test(withoutProtocol));
+}
+
 /**
  * Chrome Tab adapter — query active tab, send messages, inject content scripts.
  */

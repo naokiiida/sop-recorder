@@ -1,7 +1,7 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { RecordedStep } from '../core/types.js';
-import { icon, ChevronUp, ChevronDown, Trash2 } from './icons.js';
+import { icon, ChevronUp, ChevronDown, Trash2, ImageOff } from './icons.js';
 
 type CardMode = 'live' | 'edit';
 
@@ -48,7 +48,7 @@ export class SopStepCard extends LitElement {
                 alt="Step ${this.step.sequenceNumber}"
                 class="sop-thumbnail sop-thumbnail--live"
               />`
-            : html`<div class="sop-thumbnail sop-thumbnail--live" style="background:var(--pico-muted-border-color);display:flex;align-items:center;justify-content:center;color:var(--pico-muted-color);font-size:0.65rem;">No img</div>`}
+            : html`<div class="sop-thumbnail sop-thumbnail--live sop-screenshot-unavailable">${icon(ImageOff, 16)}<span>Screenshot unavailable</span></div>`}
         </figure>
         <div style="min-width:0;display:flex;flex-direction:column;gap:4px;">
           <div class="sop-flex" style="min-width:0;flex:1;gap:6px;">
@@ -75,7 +75,7 @@ export class SopStepCard extends LitElement {
                 class="sop-thumbnail sop-thumbnail--edit"
                 @click=${this.handleThumbnailClick}
               />`
-            : html`<div class="sop-thumbnail-placeholder">No img</div>`}
+            : html`<div class="sop-thumbnail-placeholder sop-screenshot-unavailable">${icon(ImageOff, 20)}<span>Screenshot unavailable</span></div>`}
           <span class="sop-step-badge">${this.step.sequenceNumber}</span>
           <div class="sop-hover-actions">
             <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move up">${icon(ChevronUp, 14)}</button>

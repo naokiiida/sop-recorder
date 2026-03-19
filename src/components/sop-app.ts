@@ -10,21 +10,35 @@ import './sop-screenshot-lightbox.js';
 /**
  * Root application shell with state-driven view routing.
  * Uses light DOM for PicoCSS compatibility.
+ * Includes top-level error boundary to prevent white screens.
  */
 @customElement('sop-app')
 export class SopApp extends LitElement {
   private ctrl = new RecordingController(this);
 
   @state() private lightboxBlobKey: string | null = null;
+  @state() private renderError: string | null = null;
 
   override createRenderRoot() {
     return this;
   }
 
   override render() {
+    if (this.renderError) {
+      return html`
+        <section style="padding:16px;">
+          <p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;">Something went wrong. Please try reloading the extension.</p>
+          <button class="outline" @click=${() => { this.renderError = null; }}>Try Again</button>
+        </section>
+      `;
+    }
     return html`
       ${this.ctrl.viewState === 'edit'
         ? html`<button class="sop-back-button" style="margin-bottom:var(--sop-gap-card);" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>`
+        : nothing}
+
+      ${this.ctrl.reconnecting
+        ? html`<p role="status" style="color:var(--pico-muted-color);font-size:0.85rem;margin:0 0 8px;">Reconnecting...</p>`
         : nothing}
 
       ${this.ctrl.error
@@ -40,6 +54,15 @@ export class SopApp extends LitElement {
           ></sop-screenshot-lightbox>`
         : nothing}
     `;
+  }
+
+  override updated(changedProperties: Map<string, unknown>): void {
+    super.updated(changedProperties);
+    // Catch unhandled errors from child components
+    this.addEventListener('error', (e: Event) => {
+      console.error('[SOP Recorder] Render error caught by boundary:', e);
+      this.renderError = 'A rendering error occurred.';
+    }, { once: true });
   }
 
   private renderView() {
@@ -71,6 +94,7 @@ export class SopApp extends LitElement {
           @reorder-steps=${this.handleReorderSteps}
           @export-recording=${this.handleExportRecording}
           @show-lightbox=${this.handleShowLightbox}
+          @show-error=${this.handleShowError}
         ></sop-editor>`;
     }
   }
@@ -114,6 +138,15 @@ export class SopApp extends LitElement {
 
   private handleShowLightbox(e: CustomEvent<{ blobKey: string }>) {
     this.lightboxBlobKey = e.detail.blobKey;
+  }
+
+  private handleShowError(e: CustomEvent<{ message: string }>) {
+    this.ctrl.error = e.detail.message;
+    this.requestUpdate();
+    setTimeout(() => {
+      this.ctrl.error = null;
+      this.requestUpdate();
+    }, 5000);
   }
 
   private handleBack() {
