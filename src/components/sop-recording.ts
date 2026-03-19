@@ -21,7 +21,7 @@ export class SopRecording extends LitElement {
     return html`
       <section>
         <!-- Recording indicator -->
-        <div class="sop-flex" style="margin-bottom:var(--sop-gap-section);">
+        <header class="sop-flex" style="margin-bottom:var(--sop-gap-section);">
           <span
             class="sop-recording-dot ${isPaused ? '' : 'sop-pulse'}"
             style="background:${isPaused ? 'var(--sop-paused-color)' : 'var(--sop-recording-color)'};"
@@ -33,10 +33,10 @@ export class SopRecording extends LitElement {
           <small style="margin-left:auto;">
             ${this.steps.length} step${this.steps.length !== 1 ? 's' : ''}
           </small>
-        </div>
+        </header>
 
         <!-- Controls: PicoCSS group -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:var(--sop-gap-section);">
+        <div class="sop-control-grid">
           ${isPaused
             ? html`<button class="secondary" @click=${this.handleResume}>&#9654; Resume</button>`
             : html`<button class="secondary" @click=${this.handlePause}>&#10074;&#10074; Pause</button>`}
@@ -44,14 +44,14 @@ export class SopRecording extends LitElement {
         </div>
 
         <!-- Live step feed (newest first) -->
-        <div class="sop-stack sop-stack--tight" role="log" aria-label="Captured steps" aria-live="polite">
+        <section class="sop-stack sop-stack--tight" role="log" aria-label="Captured steps" aria-live="polite">
           ${[...this.steps].reverse().map(
             (step) => html`<sop-step-card .step=${step} mode="live"></sop-step-card>`,
           )}
-        </div>
+        </section>
 
         ${this.steps.length === 0
-          ? html`<p class="sop-muted" style="text-align:center;padding:2rem 0;">
+          ? html`<p class="sop-muted sop-empty-state">
               Interact with the page to capture steps...
             </p>`
           : ''}
