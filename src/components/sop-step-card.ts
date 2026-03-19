@@ -45,7 +45,7 @@ export class SopStepCard extends LitElement {
         @dragend=${this.mode === 'edit' ? this.handleDragEnd : nothing}
       >
         <!-- Thumbnail -->
-        <div>
+        <figure>
           ${this.step.thumbnailDataUrl
             ? html`<img
                 src=${this.step.thumbnailDataUrl}
@@ -53,8 +53,8 @@ export class SopStepCard extends LitElement {
                 class=${thumbClass}
                 @click=${this.mode === 'edit' ? this.handleThumbnailClick : nothing}
               />`
-            : html`<div class=${thumbClass} style="background:var(--pico-muted-border-color);display:flex;align-items:center;justify-content:center;color:var(--pico-muted-color);font-size:0.65rem;">No img</div>`}
-        </div>
+            : html`<figure class=${thumbClass} style="background:var(--pico-muted-border-color);display:flex;align-items:center;justify-content:center;color:var(--pico-muted-color);font-size:0.65rem;">No img</figure>`}
+        </figure>
 
         <!-- Content -->
         <div style="min-width:0;display:flex;flex-direction:column;gap:4px;">
@@ -80,9 +80,9 @@ export class SopStepCard extends LitElement {
 
           <!-- URL: hidden in live, secondary in edit -->
           ${this.mode === 'edit'
-            ? html`<div class="sop-muted sop-truncate" style="font-size:0.8rem;color:var(--pico-muted-color);" title=${this.step.pageUrl}>
+            ? html`<small class="sop-muted sop-truncate" style="font-size:0.8rem;color:var(--pico-muted-color);" title=${this.step.pageUrl}>
                 ${this.truncateUrl(this.step.pageUrl)}
-              </div>`
+              </small>`
             : nothing}
 
           <!-- Description: edit mode only -->
@@ -173,12 +173,12 @@ export class SopStepCard extends LitElement {
 
     const hasDesc = this.step.description && this.step.description.length > 0;
     return html`
-      <div
+      <p
         class="sop-editable ${hasDesc ? '' : 'sop-editable--placeholder'}"
-        style="font-size:0.85rem;min-height:1.2em;"
+        style="font-size:0.85rem;min-height:1.2em;margin:0;"
         @click=${this.startDescriptionEdit}
         title="Click to edit description"
-      >${hasDesc ? this.step.description : '\u270E Add description'}</div>
+      >${hasDesc ? this.step.description : '\u270E Add description'}</p>
     `;
   }
 
