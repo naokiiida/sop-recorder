@@ -153,6 +153,24 @@ article {
   cursor: pointer;
 }
 
+/* ── Recording card (home list) ─────────────────────────────────────────────── */
+
+.sop-rec-card {
+  padding: 12px;
+  border: var(--sop-step-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sop-rec-card:hover {
+  background: var(--sop-card-hover);
+}
+
+.sop-rec-card--select {
+  cursor: default;
+}
+
 /* ── Step card ──────────────────────────────────────────────────────────────── */
 
 .sop-step-card {

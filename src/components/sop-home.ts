@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit';
+import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { RecordingMetadata } from '../core/types.js';
 import { icon, Trash2, Download } from './icons.js';
@@ -44,8 +44,16 @@ export class SopHome extends LitElement {
   }
 
   private renderList() {
+    const allIds = this.recordings.map((r) => (r as RecordingMetadata & { id?: string }).id ?? '');
+    const allSelected = this.selecting && allIds.length > 0 && allIds.every((id) => this.selected.has(id));
+
     return html`
-      <h2>Saved Recordings</h2>
+      <div class="sop-flex-between" style="margin-bottom:0.5rem;">
+        <h2 style="margin-bottom:0;">
+          Saved Recordings${this.selecting ? html` <span class="sop-muted" style="font-weight:400;">(${this.selected.size})</span>` : nothing}
+        </h2>
+        ${this.selecting ? html`<input type="checkbox" .checked=${allSelected} @change=${() => this.toggleSelectAll(allIds)} aria-label="Select all" />` : nothing}
+      </div>
       <div class="sop-stack sop-stack--tight">
         ${this.recordings.map((rec) => this.renderCard(rec))}
       </div>
@@ -57,24 +65,24 @@ export class SopHome extends LitElement {
     const id = meta.id ?? '';
     const title = meta.title ?? meta.startPageTitle ?? 'Untitled SOP';
     const isSelected = this.selected.has(id);
-
-    if (this.selecting) {
-      return html`
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;">
-          <input type="checkbox" .checked=${isSelected} @change=${() => this.toggleSelect(id)} />
-          <span class="sop-truncate">${title}</span>
-        </label>
-      `;
-    }
+    const stepLabel = `${meta.stepCount ?? 0} step${(meta.stepCount ?? 0) !== 1 ? 's' : ''}`;
 
     return html`
-      <a href="#" class="sop-truncate" style="display:block;padding:8px 12px;"
-        @click=${(e: Event) => { e.preventDefault(); this.handleLoad(id); }}
-        @pointerdown=${() => this.handlePointerDown(id)}
-        @pointerup=${this.handlePointerUp}
-        @pointermove=${this.handlePointerMove}
-        @pointerleave=${this.handlePointerUp}
-      >${title}</a>
+      <article class="sop-rec-card ${this.selecting ? 'sop-rec-card--select' : ''}"
+        @click=${this.selecting ? () => this.toggleSelect(id) : () => this.handleLoad(id)}
+        @pointerdown=${this.selecting ? undefined : () => this.handlePointerDown(id)}
+        @pointerup=${this.selecting ? undefined : this.handlePointerUp}
+        @pointermove=${this.selecting ? undefined : this.handlePointerMove}
+        @pointerleave=${this.selecting ? undefined : this.handlePointerUp}
+      >
+        <div class="sop-flex" style="gap:10px;min-width:0;">
+          ${this.selecting ? html`<input type="checkbox" .checked=${isSelected} />` : nothing}
+          <div style="min-width:0;flex:1;overflow:hidden;">
+            <strong class="sop-truncate" style="display:block;">${title}</strong>
+            <small class="sop-muted">${stepLabel}</small>
+          </div>
+        </div>
+      </article>
     `;
   }
 
@@ -82,14 +90,13 @@ export class SopHome extends LitElement {
 
   private renderBatchBar() {
     return html`
-      <nav style="display:flex;gap:8px;align-items:center;margin-bottom:var(--sop-gap-section);">
-        <button class="outline secondary" @click=${this.cancelSelect}>Cancel</button>
-        <span class="sop-muted">${this.selected.size} selected</span>
+      <nav style="display:flex;gap:6px;align-items:center;margin-bottom:var(--sop-gap-section);">
+        <button class="outline secondary" style="white-space:nowrap;" @click=${this.cancelSelect}>Cancel</button>
         <span style="flex:1;"></span>
-        <button class="outline secondary" @click=${this.batchExport}>
+        <button class="outline secondary sop-flex" style="white-space:nowrap;gap:4px;" @click=${this.batchExport}>
           ${icon(Download, 14)} Export
         </button>
-        <button class="sop-btn-danger" @click=${this.batchDelete}>
+        <button class="sop-btn-danger sop-flex" style="white-space:nowrap;gap:4px;" @click=${this.batchDelete}>
           ${icon(Trash2, 14)} Delete
         </button>
       </nav>
@@ -120,6 +127,11 @@ export class SopHome extends LitElement {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     this.selected = next;
+  }
+
+  private toggleSelectAll(allIds: string[]) {
+    const allSelected = allIds.every((id) => this.selected.has(id));
+    this.selected = allSelected ? new Set() : new Set(allIds);
   }
 
   private cancelSelect() {
