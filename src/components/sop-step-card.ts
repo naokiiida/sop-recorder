@@ -65,6 +65,9 @@ export class SopStepCard extends LitElement {
         draggable="true"
         @dragstart=${this.handleDragStart}
         @dragend=${this.handleDragEnd}
+        @keydown=${this.handleCardKeydown}
+        aria-roledescription="Draggable step"
+        aria-label="Step ${this.step.sequenceNumber}: ${this.step.title}"
       >
         <!-- Thumbnail container with badge & action overlays -->
         <div class="sop-thumbnail-container">
@@ -78,9 +81,9 @@ export class SopStepCard extends LitElement {
             : html`<div class="sop-thumbnail-placeholder sop-screenshot-unavailable">${icon(ImageOff, 20)}<span>Screenshot unavailable</span></div>`}
           <span class="sop-step-badge">${this.step.sequenceNumber}</span>
           <div class="sop-hover-actions">
-            <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move up">${icon(ChevronUp, 14)}</button>
-            <button @click=${this.handleMoveDown} ?disabled=${this.isLast} aria-label="Move down">${icon(ChevronDown, 14)}</button>
-            <button class="sop-danger" @click=${this.handleDelete} aria-label="Delete step">${icon(Trash2, 14)}</button>
+            <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move step ${this.step.sequenceNumber} up">${icon(ChevronUp, 14)}</button>
+            <button @click=${this.handleMoveDown} ?disabled=${this.isLast} aria-label="Move step ${this.step.sequenceNumber} down">${icon(ChevronDown, 14)}</button>
+            <button class="sop-danger" @click=${this.handleDelete} aria-label="Delete step ${this.step.sequenceNumber}">${icon(Trash2, 14)}</button>
           </div>
         </div>
 
@@ -120,14 +123,24 @@ export class SopStepCard extends LitElement {
         <strong
           class="sop-truncate sop-editable"
           style="flex:1;min-width:0;font-size:0.9rem;"
+          tabindex="0"
+          role="button"
+          aria-label="Edit step title"
           @click=${this.startTitleEdit}
-          title="Click to edit"
+          @keydown=${this.handleTitleKeydown}
         >${this.step.title}</strong>
       `;
     }
 
     // Live mode: plain title
     return html`<strong class="sop-truncate" style="flex:1;min-width:0;font-size:0.85rem;">${this.step.title}</strong>`;
+  }
+
+  private handleTitleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.startTitleEdit();
+    }
   }
 
   private startTitleEdit() {
@@ -152,10 +165,19 @@ export class SopStepCard extends LitElement {
         }),
       );
     }
+    this.focusEditableTitle();
   }
 
   private cancelTitleEdit() {
     this.editingTitle = false;
+    this.focusEditableTitle();
+  }
+
+  private focusEditableTitle() {
+    requestAnimationFrame(() => {
+      const el = this.querySelector('strong.sop-editable') as HTMLElement | null;
+      el?.focus();
+    });
   }
 
   // ── Description ─────────────────────────────────────────────────────────
@@ -180,10 +202,20 @@ export class SopStepCard extends LitElement {
       <p
         class="sop-editable ${hasDesc ? '' : 'sop-editable--placeholder'}"
         style="font-size:0.85rem;min-height:1.2em;margin:0;"
+        tabindex="0"
+        role="button"
+        aria-label="Edit step description"
         @click=${this.startDescriptionEdit}
-        title="Click to edit description"
+        @keydown=${this.handleDescriptionKeydown}
       >${hasDesc ? this.step.description : '\u270E Add description'}</p>
     `;
+  }
+
+  private handleDescriptionKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.startDescriptionEdit();
+    }
   }
 
   private startDescriptionEdit() {
@@ -207,10 +239,34 @@ export class SopStepCard extends LitElement {
         }),
       );
     }
+    this.focusEditableDescription();
   }
 
   private cancelDescriptionEdit() {
     this.editingDescription = false;
+    this.focusEditableDescription();
+  }
+
+  private focusEditableDescription() {
+    requestAnimationFrame(() => {
+      const el = this.querySelector('p.sop-editable') as HTMLElement | null;
+      el?.focus();
+    });
+  }
+
+  // ── Keyboard shortcuts for edit mode card ──────────────────────────────
+
+  private handleCardKeydown(e: KeyboardEvent) {
+    if (e.altKey && e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.handleMoveUp();
+    } else if (e.altKey && e.key === 'ArrowDown') {
+      e.preventDefault();
+      this.handleMoveDown();
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      this.handleDelete();
+    }
   }
 
   // ── Actions (🗑 trash, ▲▼ reorder — all hover-reveal) ─────────────────

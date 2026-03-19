@@ -8,6 +8,17 @@ import './sop-editor.js';
 import './sop-screenshot-lightbox.js';
 
 /**
+ * Announce a message to screen readers via the live region.
+ */
+export function announce(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
+  const el = document.getElementById('sop-announcer');
+  if (!el) return;
+  el.setAttribute('aria-live', priority);
+  el.textContent = '';
+  requestAnimationFrame(() => { el.textContent = message; });
+}
+
+/**
  * Root application shell with state-driven view routing.
  * Uses light DOM for PicoCSS compatibility.
  * Includes top-level error boundary to prevent white screens.
@@ -18,6 +29,8 @@ export class SopApp extends LitElement {
 
   @state() private lightboxBlobKey: string | null = null;
   @state() private renderError: string | null = null;
+  private lightboxTrigger: HTMLElement | null = null;
+  private previousView: string | null = null;
 
   override createRenderRoot() {
     return this;
@@ -33,26 +46,30 @@ export class SopApp extends LitElement {
       `;
     }
     return html`
-      ${this.ctrl.viewState === 'edit'
-        ? html`<button class="sop-back-button" style="margin-bottom:var(--sop-gap-card);" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>`
-        : nothing}
+      <div role="application" aria-label="SOP Recorder">
+        ${this.ctrl.viewState === 'edit'
+          ? html`<button class="sop-back-button" style="margin-bottom:var(--sop-gap-card);" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>`
+          : nothing}
 
-      ${this.ctrl.reconnecting
-        ? html`<p role="status" style="color:var(--pico-muted-color);font-size:0.85rem;margin:0 0 8px;">Reconnecting...</p>`
-        : nothing}
+        ${this.ctrl.reconnecting
+          ? html`<p role="status" style="color:var(--pico-muted-color);font-size:0.85rem;margin:0 0 8px;">Reconnecting...</p>`
+          : nothing}
 
-      ${this.ctrl.error
-        ? html`<p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;margin:0 0 8px;">${this.ctrl.error}</p>`
-        : nothing}
+        ${this.ctrl.error
+          ? html`<p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;margin:0 0 8px;">${this.ctrl.error}</p>`
+          : nothing}
 
-      ${this.renderView()}
+        ${this.renderView()}
 
-      ${this.lightboxBlobKey
-        ? html`<sop-screenshot-lightbox
-            .blobKey=${this.lightboxBlobKey}
-            @close-lightbox=${() => { this.lightboxBlobKey = null; }}
-          ></sop-screenshot-lightbox>`
-        : nothing}
+        ${this.lightboxBlobKey
+          ? html`<sop-screenshot-lightbox
+              .blobKey=${this.lightboxBlobKey}
+              @close-lightbox=${this.handleCloseLightbox}
+            ></sop-screenshot-lightbox>`
+          : nothing}
+
+        <div id="sop-announcer" class="sr-only" role="status" aria-live="polite"></div>
+      </div>
     `;
   }
 
@@ -63,6 +80,31 @@ export class SopApp extends LitElement {
       console.error('[SOP Recorder] Render error caught by boundary:', e);
       this.renderError = 'A rendering error occurred.';
     }, { once: true });
+
+    // Focus management after view transitions
+    const currentView = this.ctrl.viewState;
+    if (this.previousView && this.previousView !== currentView) {
+      this.manageFocusForTransition(this.previousView, currentView);
+    }
+    this.previousView = currentView;
+  }
+
+  private manageFocusForTransition(from: string, to: string): void {
+    requestAnimationFrame(() => {
+      if (to === 'recording') {
+        // Home → Recording: focus the pause button
+        const pauseBtn = this.querySelector('.sop-control-grid button');
+        (pauseBtn as HTMLElement)?.focus();
+      } else if (to === 'edit' && from === 'recording') {
+        // Recording → Edit: focus the first step card
+        const firstCard = this.querySelector('sop-step-card article');
+        (firstCard as HTMLElement)?.focus();
+      } else if (to === 'home') {
+        // Edit → Home: focus the "Start Recording" button
+        const startBtn = this.querySelector('button.contrast');
+        (startBtn as HTMLElement)?.focus();
+      }
+    });
   }
 
   private renderView() {
@@ -137,7 +179,19 @@ export class SopApp extends LitElement {
   }
 
   private handleShowLightbox(e: CustomEvent<{ blobKey: string }>) {
+    this.lightboxTrigger = e.target as HTMLElement;
     this.lightboxBlobKey = e.detail.blobKey;
+  }
+
+  private handleCloseLightbox() {
+    this.lightboxBlobKey = null;
+    // Restore focus to the element that opened the lightbox
+    if (this.lightboxTrigger) {
+      requestAnimationFrame(() => {
+        this.lightboxTrigger?.focus();
+        this.lightboxTrigger = null;
+      });
+    }
   }
 
   private handleShowError(e: CustomEvent<{ message: string }>) {

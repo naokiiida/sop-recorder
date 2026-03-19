@@ -2,6 +2,7 @@ import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { RecordedStep, Recording } from '../core/types.js';
 import { generateMarkdown } from '../core/export-engine.js';
+import { announce } from './sop-app.js';
 import type { SopStepCard } from './sop-step-card.js';
 import { icon, Trash2 } from './icons.js';
 import './sop-step-card.js';
@@ -53,8 +54,11 @@ export class SopEditor extends LitElement {
             : html`<h2
                 class="sop-editable"
                 style="cursor:pointer;margin:0 0 4px;"
+                tabindex="0"
+                role="button"
+                aria-label="Edit recording title"
                 @click=${this.startTitleEdit}
-                title="Click to edit title"
+                @keydown=${this.handleTitleKeydown}
               >${title}</h2>`}
           <small class="sop-muted">
             ${stepCount} step${stepCount !== 1 ? 's' : ''}${createdDate ? ` \u00B7 ${createdDate}` : ''}
@@ -108,7 +112,7 @@ export class SopEditor extends LitElement {
         <!-- Undo toast (🗑 consistent delete feedback) -->
         ${this.undoStep
           ? html`
-            <aside class="sop-undo-toast" role="alert">
+            <aside class="sop-undo-toast" role="status" aria-live="polite" aria-atomic="true">
               <span>${icon(Trash2, 14)} Step deleted</span>
               <button class="secondary outline" style="padding:4px 10px;font-size:0.8rem;" @click=${this.handleUndo}>Undo</button>
             </aside>
@@ -119,6 +123,13 @@ export class SopEditor extends LitElement {
   }
 
   // ── Title editing ───────────────────────────────────────────────────────
+
+  private handleTitleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.startTitleEdit();
+    }
+  }
 
   private startTitleEdit() {
     this.editTitleValue = this.recording?.title ?? '';
@@ -148,7 +159,8 @@ export class SopEditor extends LitElement {
 
   private handleDeleteStep(e: CustomEvent<{ stepId: string }>) {
     const stepId = e.detail.stepId;
-    const deletedStep = this.steps.find((s) => s.id === stepId);
+    const deletedIndex = this.steps.findIndex((s) => s.id === stepId);
+    const deletedStep = deletedIndex >= 0 ? this.steps[deletedIndex] : undefined;
     if (!deletedStep) return;
 
     this.undoStep = deletedStep;
@@ -161,6 +173,19 @@ export class SopEditor extends LitElement {
     this.dispatchEvent(
       new CustomEvent('delete-step', { detail: { stepId }, bubbles: true, composed: true }),
     );
+
+    announce('Step deleted. Press Ctrl+Z to undo.');
+
+    // Focus next step card (or previous if last was deleted)
+    requestAnimationFrame(() => {
+      const cards = this.querySelectorAll('sop-step-card');
+      const focusIndex = Math.min(deletedIndex, cards.length - 1);
+      const card = focusIndex >= 0 ? cards[focusIndex] : undefined;
+      if (card) {
+        const article = card.querySelector('article');
+        (article as HTMLElement)?.focus();
+      }
+    });
   }
 
   private handleUndo() {
@@ -193,6 +218,19 @@ export class SopEditor extends LitElement {
     this.dispatchEvent(
       new CustomEvent('reorder-steps', { detail: { stepIds: ids }, bubbles: true, composed: true }),
     );
+
+    // Announce and focus the moved step card after reorder
+    const movedToPosition = ids.indexOf(stepId) + 1;
+    announce(`Step moved to position ${movedToPosition}`);
+
+    requestAnimationFrame(() => {
+      const cards = this.querySelectorAll('sop-step-card');
+      const targetCard = Array.from(cards).find(
+        (card) => (card as import('./sop-step-card.js').SopStepCard).step?.id === stepId,
+      );
+      const article = targetCard?.querySelector('article');
+      article?.focus();
+    });
   }
 
   // ── D&D (implicit — cursor change + drop indicator) ────────────────────
@@ -267,6 +305,7 @@ export class SopEditor extends LitElement {
     }
 
     this.exportError = null;
+    announce('Generating export...');
     this.dispatchEvent(new CustomEvent('export-recording', { bubbles: true, composed: true }));
   }
 
@@ -280,10 +319,12 @@ export class SopEditor extends LitElement {
       this.exportRetryCount = 0;
       this.copyFeedback = true;
       setTimeout(() => { this.copyFeedback = false; }, 2000);
+      announce('Markdown copied to clipboard (ZIP export failed)');
       console.warn('[SOP Recorder] Export fallback: copied Markdown to clipboard (ZIP export failed)');
     } catch (err) {
       console.error('[SOP Recorder] Markdown fallback export also failed:', err);
       this.exportError = 'Export failed. Please try again later.';
+      announce('Export failed', 'assertive');
     }
   }
 
@@ -294,6 +335,7 @@ export class SopEditor extends LitElement {
       const markdown = generateMarkdown(recording, 'clipboard');
       await navigator.clipboard.writeText(markdown);
       this.copyFeedback = true;
+      announce('Markdown copied to clipboard');
       setTimeout(() => {
         this.copyFeedback = false;
       }, 2000);
@@ -309,8 +351,8 @@ export class SopEditor extends LitElement {
   }
 
   private buildFallbackRecording(): Recording | null {
-    if (this.steps.length === 0) return null;
-    const firstStep = this.steps[0]!;
+    const firstStep = this.steps[0];
+    if (!firstStep) return null;
     return {
       id: '',
       title: 'Untitled SOP',

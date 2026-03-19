@@ -406,6 +406,7 @@ article {
 @media (prefers-reduced-motion: reduce) {
   .sop-pulse { animation: none; }
   .sop-undo-toast { animation: none; }
+  * { scroll-behavior: auto !important; }
 }
 
 /* ── Semantic resets inside card contexts ──────────────────────────────────── */
@@ -417,3 +418,47 @@ section > header { padding: 0; margin: 0; }
 
 .sop-empty-state { text-align: center; padding: 2rem 0; }
 .sop-control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sop-gap-card); margin-bottom: var(--sop-gap-section); }
+
+/* ── Focus indicators ──────────────────────────────────────────────────────── */
+
+.sop-editable:focus-visible {
+  outline: 2px dashed var(--pico-primary);
+  outline-offset: 2px;
+  background: var(--sop-subtle-hover-bg);
+}
+
+.sop-rec-card:focus-visible {
+  outline: 2px solid var(--pico-primary);
+  outline-offset: 2px;
+}
+
+.sop-step-card--vertical:focus-visible {
+  outline: 2px solid var(--pico-primary);
+  outline-offset: 2px;
+}
+
+.sop-hover-actions button:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--pico-primary);
+  outline-offset: 1px;
+}
+
+/* Show hover-actions when any child is focused */
+*:focus-within > .sop-hover-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Screen reader only ────────────────────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

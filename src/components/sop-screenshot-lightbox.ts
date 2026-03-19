@@ -23,6 +23,11 @@ export class SopScreenshotLightbox extends LitElement {
     super.connectedCallback();
     document.addEventListener('keydown', this.handleKeydown);
     this.loadImage();
+    // Focus the close button when lightbox opens
+    requestAnimationFrame(() => {
+      const closeBtn = this.querySelector('button[aria-label="Close"]') as HTMLElement | null;
+      closeBtn?.focus();
+    });
   }
 
   override disconnectedCallback() {
@@ -39,7 +44,12 @@ export class SopScreenshotLightbox extends LitElement {
 
   override render() {
     return html`
-      <dialog open @click=${this.handleBackdropClick}>
+      <dialog open
+        @click=${this.handleBackdropClick}
+        @keydown=${this.handleFocusTrap}
+        aria-label="Screenshot viewer"
+        aria-modal="true"
+      >
         <article @click=${(e: Event) => e.stopPropagation()} style="max-width:95vw;max-height:95vh;overflow:auto;">
           <header>
             <button aria-label="Close" rel="prev" @click=${this.close}></button>
@@ -95,6 +105,23 @@ export class SopScreenshotLightbox extends LitElement {
       this.close();
     }
   };
+
+  private handleFocusTrap(e: KeyboardEvent) {
+    if (e.key !== 'Tab') return;
+    const dialog = this.querySelector('dialog');
+    if (!dialog) return;
+    const focusable = dialog.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"])');
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 
   private handleBackdropClick(e: Event) {
     if (e.target === e.currentTarget) {

@@ -69,7 +69,11 @@ export class SopHome extends LitElement {
 
     return html`
       <article class="sop-rec-card ${this.selecting ? 'sop-rec-card--select' : ''}"
+        tabindex="0"
+        role="button"
+        aria-label="${title}, ${stepLabel}"
         @click=${this.selecting ? () => this.toggleSelect(id) : () => this.handleLoad(id)}
+        @keydown=${(e: KeyboardEvent) => this.handleCardKeydown(e, id)}
         @pointerdown=${this.selecting ? undefined : () => this.handlePointerDown(id)}
         @pointerup=${this.selecting ? undefined : this.handlePointerUp}
         @pointermove=${this.selecting ? undefined : this.handlePointerMove}
@@ -101,6 +105,30 @@ export class SopHome extends LitElement {
         </button>
       </nav>
     `;
+  }
+
+  // ── Keyboard navigation ─────────────────────────────────────────────────
+
+  private handleCardKeydown(e: KeyboardEvent, id: string) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        // Shift+Enter enters select mode and toggles this card
+        if (!this.selecting) {
+          this.selecting = true;
+          this.selected = new Set([id]);
+        } else {
+          this.toggleSelect(id);
+        }
+      } else if (this.selecting) {
+        this.toggleSelect(id);
+      } else {
+        this.handleLoad(id);
+      }
+    } else if (e.key === 'Escape' && this.selecting) {
+      e.preventDefault();
+      this.cancelSelect();
+    }
   }
 
   // ── Long-press detection ────────────────────────────────────────────────

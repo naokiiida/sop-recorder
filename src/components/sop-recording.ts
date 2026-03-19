@@ -1,6 +1,7 @@
 import { LitElement, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { RecordedStep, RecordingState } from '../core/types.js';
+import { announce } from './sop-app.js';
 import './sop-step-card.js';
 
 /**
@@ -11,8 +12,36 @@ export class SopRecording extends LitElement {
   @property({ type: Array }) steps: RecordedStep[] = [];
   @property({ type: String }) recordingState: RecordingState = 'recording';
 
+  private previousStepCount = 0;
+  private previousState: RecordingState | null = null;
+
   override createRenderRoot() {
     return this;
+  }
+
+  override updated() {
+    // Announce recording state changes
+    if (this.previousState !== null && this.previousState !== this.recordingState) {
+      if (this.recordingState === 'recording' && this.previousState === 'idle') {
+        announce('Recording started', 'assertive');
+      } else if (this.recordingState === 'paused') {
+        announce('Recording paused', 'assertive');
+      } else if (this.recordingState === 'recording' && this.previousState === 'paused') {
+        announce('Recording resumed', 'assertive');
+      } else if (this.recordingState === 'idle') {
+        announce(`Recording stopped. ${this.steps.length} step${this.steps.length !== 1 ? 's' : ''} captured.`, 'assertive');
+      }
+    }
+    this.previousState = this.recordingState;
+
+    // Announce new step captured
+    if (this.steps.length > this.previousStepCount && this.previousStepCount > 0) {
+      const latest = this.steps[this.steps.length - 1];
+      if (latest) {
+        announce(`Step ${latest.sequenceNumber} captured: ${latest.title}`);
+      }
+    }
+    this.previousStepCount = this.steps.length;
   }
 
   override render() {
@@ -27,7 +56,11 @@ export class SopRecording extends LitElement {
             style="background:${isPaused ? 'var(--sop-paused-color)' : 'var(--sop-recording-color)'};"
             aria-hidden="true"
           ></span>
-          <strong style="color:${isPaused ? 'var(--sop-paused-color)' : 'var(--sop-recording-color)'};">
+          <strong
+            role="status"
+            aria-live="assertive"
+            style="color:${isPaused ? 'var(--sop-paused-color)' : 'var(--sop-recording-color)'};"
+          >
             ${isPaused ? 'Paused' : 'Recording'}
           </strong>
           <small style="margin-left:auto;">

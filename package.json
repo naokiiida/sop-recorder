@@ -27,6 +27,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.2",
     "@size-limit/file": "^12.0.1",
