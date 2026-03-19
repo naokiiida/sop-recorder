@@ -1,3 +1,4 @@
+performance.mark('sw-start');
 import { RecordingStateMachine } from '../core/recording-state-machine.js';
 import { StepManager } from '../core/step-manager.js';
 import type {
@@ -125,6 +126,11 @@ export default defineBackground(() => {
   alarmAdapter.onAlarm(() => {
     // Just a heartbeat — prevents SW termination during recording
   });
+
+  // ── Cold start measurement ─────────────────────────────────────────
+  performance.mark('sw-ready');
+  const measure = performance.measure('sw-cold-start', 'sw-start', 'sw-ready');
+  console.debug(`[SOP Recorder] Service worker cold start: ${measure.duration.toFixed(1)}ms`);
 });
 
 // ── Panel Message Handler ───────────────────────────────────────────────────
@@ -345,7 +351,8 @@ async function handleStepCaptured(event: CapturedEvent, tabId: number): Promise<
     await delay(SCREENSHOT_DELAY_MS);
   }
 
-  // 2. Capture screenshot
+  // 2. Capture screenshot (with latency measurement)
+  const captureStart = performance.now();
   const screenshotBlob = await captureScreenshotSafe();
   let screenshotBlobKey = '';
   let thumbnailDataUrl: string | undefined;
@@ -366,6 +373,9 @@ async function handleStepCaptured(event: CapturedEvent, tabId: number): Promise<
     // 5. Store screenshot blob
     screenshotBlobKey = `${activeRecordingId}_step_${stepNumber}`;
     await blobStore.put(screenshotBlobKey, badgedBlob);
+
+    const captureLatency = performance.now() - captureStart;
+    console.debug(`[SOP Recorder] Screenshot capture latency: ${captureLatency.toFixed(1)}ms (target: <300ms)`);
   }
 
   // 6. Remove overlay

@@ -1,5 +1,6 @@
 import { LitElement, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import type { RecordedStep, RecordingState } from '../core/types.js';
 import { announce } from './sop-app.js';
 import './sop-step-card.js';
@@ -78,7 +79,9 @@ export class SopRecording extends LitElement {
 
         <!-- Live step feed (newest first) -->
         <section class="sop-stack sop-stack--tight" role="log" aria-label="Captured steps" aria-live="polite">
-          ${[...this.steps].reverse().map(
+          ${repeat(
+            [...this.steps].reverse(),
+            (step) => step.id,
             (step) => html`<sop-step-card .step=${step} mode="live"></sop-step-card>`,
           )}
         </section>

@@ -1,5 +1,6 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import type { RecordedStep, Recording } from '../core/types.js';
 import { generateMarkdown } from '../core/export-engine.js';
 import { announce } from './sop-app.js';
@@ -72,7 +73,9 @@ export class SopEditor extends LitElement {
           @dragleave=${this.handleDragLeave}
           @drop=${this.handleDrop}
         >
-          ${this.steps.map(
+          ${repeat(
+            this.steps,
+            (step) => step.id,
             (step, index) => html`
               <sop-step-card
                 .step=${step}

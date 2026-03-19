@@ -47,6 +47,7 @@ export class SopStepCard extends LitElement {
                 src=${this.step.thumbnailDataUrl}
                 alt="Step ${this.step.sequenceNumber}"
                 class="sop-thumbnail sop-thumbnail--live"
+                loading="lazy"
               />`
             : html`<div class="sop-thumbnail sop-thumbnail--live sop-screenshot-unavailable">${icon(ImageOff, 16)}<span>Screenshot unavailable</span></div>`}
         </figure>
@@ -76,6 +77,7 @@ export class SopStepCard extends LitElement {
                 src=${this.step.thumbnailDataUrl}
                 alt="Step ${this.step.sequenceNumber}"
                 class="sop-thumbnail sop-thumbnail--edit"
+                loading="lazy"
                 @click=${this.handleThumbnailClick}
               />`
             : html`<div class="sop-thumbnail-placeholder sop-screenshot-unavailable">${icon(ImageOff, 20)}<span>Screenshot unavailable</span></div>`}
