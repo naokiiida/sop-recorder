@@ -324,17 +324,17 @@ article {
   top: 6px;
   right: 6px;
   z-index: 1;
-  background: color-mix(in srgb, #000 60%, transparent);
+  background: color-mix(in srgb, var(--pico-background-color) 60%, transparent);
   border-radius: 4px;
   padding: 2px;
 }
 
 .sop-step-card--vertical .sop-hover-actions button {
-  color: #fff;
+  color: var(--pico-contrast);
 }
 
 .sop-step-card--vertical .sop-hover-actions .sop-danger {
-  color: #ff8a8a;
+  color: var(--sop-danger-color);
 }
 
 .sop-step-content {
