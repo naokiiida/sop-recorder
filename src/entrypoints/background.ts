@@ -306,20 +306,21 @@ async function handleStepCaptured(event: CapturedEvent, tabId: number): Promise<
   let thumbnailDataUrl: string | undefined;
 
   if (screenshotBlob) {
-    // 3. Render step badge on screenshot
     const stepNumber = stepManager.getSteps().length + 1;
-    const badgedBlob = await renderStepBadge(screenshotBlob, stepNumber, event.clickCoordinates);
 
-    // 4. Store screenshot blob
-    screenshotBlobKey = `${activeRecordingId}_step_${stepNumber}`;
-    await blobStore.put(screenshotBlobKey, badgedBlob);
-
-    // 5. Generate thumbnail
+    // 3. Generate zoomed thumbnail from clean screenshot (before badge)
     try {
-      thumbnailDataUrl = await generateThumbnail(badgedBlob);
+      thumbnailDataUrl = await generateThumbnail(screenshotBlob, event.clickCoordinates, event.viewport);
     } catch {
       // Thumbnail generation failed — not critical
     }
+
+    // 4. Render step badge + click indicator on full screenshot
+    const badgedBlob = await renderStepBadge(screenshotBlob, stepNumber, event.clickCoordinates, event.viewport);
+
+    // 5. Store screenshot blob
+    screenshotBlobKey = `${activeRecordingId}_step_${stepNumber}`;
+    await blobStore.put(screenshotBlobKey, badgedBlob);
   }
 
   // 6. Remove overlay

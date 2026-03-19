@@ -1,10 +1,12 @@
 import type { IScreenshotCapture } from '../interfaces/index.js';
-import type { Coordinates } from '../../core/types.js';
+import type { Coordinates, ViewportSize } from '../../core/types.js';
 
 const JPEG_QUALITY = 0.85;
 const MAX_WIDTH = 1920;
 const THUMBNAIL_WIDTH = 320;
 const THUMBNAIL_HEIGHT = 180;
+const CROP_WIDTH_CSS = 640;
+const CROP_HEIGHT_CSS = 360;
 
 /**
  * Screenshot capture adapter using chrome.tabs.captureVisibleTab.
@@ -32,22 +34,51 @@ export async function captureScreenshotSafe(): Promise<Blob | null> {
 
 /**
  * Generate a 320x180 thumbnail from a screenshot Blob.
- * Uses OffscreenCanvas (available in service workers).
- * Returns a data URL string for inline display.
+ * When click coordinates are provided, crops a 640x360 CSS-pixel region
+ * centered on the click (2x zoom) and draws a blue click indicator.
+ * Falls back to full-viewport scaling when no coordinates are available.
  */
-export async function generateThumbnail(blob: Blob): Promise<string> {
+export async function generateThumbnail(
+  blob: Blob,
+  clickCoordinates?: Coordinates,
+  viewport?: ViewportSize,
+): Promise<string> {
   const bitmap = await createImageBitmap(blob);
 
-  // Calculate scaling to fit within thumbnail dimensions
-  const scale = Math.min(THUMBNAIL_WIDTH / bitmap.width, THUMBNAIL_HEIGHT / bitmap.height);
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
-
-  const canvas = new OffscreenCanvas(width, height);
+  const canvas = new OffscreenCanvas(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to get OffscreenCanvas 2d context');
 
-  ctx.drawImage(bitmap, 0, 0, width, height);
+  const canZoom = clickCoordinates && viewport && viewport.width >= CROP_WIDTH_CSS;
+
+  if (canZoom) {
+    const dpr = bitmap.width / viewport.width;
+    const cropW = Math.round(CROP_WIDTH_CSS * dpr);
+    const cropH = Math.round(CROP_HEIGHT_CSS * dpr);
+    const clickX = Math.round(clickCoordinates.x * dpr);
+    const clickY = Math.round(clickCoordinates.y * dpr);
+
+    // Center crop on click, clamp to image bounds
+    const cropX = clamp(clickX - cropW / 2, 0, bitmap.width - cropW);
+    const cropY = clamp(clickY - cropH / 2, 0, bitmap.height - cropH);
+
+    ctx.drawImage(bitmap, cropX, cropY, cropW, cropH, 0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+
+    // Map click position into thumbnail coordinates
+    const indicatorX = (clickX - cropX) * (THUMBNAIL_WIDTH / cropW);
+    const indicatorY = (clickY - cropY) * (THUMBNAIL_HEIGHT / cropH);
+    drawClickIndicator(ctx, indicatorX, indicatorY, 1);
+  } else {
+    // Full-viewport scaling fallback
+    const scale = Math.min(THUMBNAIL_WIDTH / bitmap.width, THUMBNAIL_HEIGHT / bitmap.height);
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+
+    canvas.width = width;
+    canvas.height = height;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+  }
+
   bitmap.close();
 
   const thumbnailBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.6 });
@@ -55,13 +86,14 @@ export async function generateThumbnail(blob: Blob): Promise<string> {
 }
 
 /**
- * Render a step number badge onto a screenshot at the given coordinates.
- * Returns a new Blob with the badge drawn.
+ * Render a step number badge and click indicator onto a screenshot.
+ * Returns a new Blob with the overlays drawn.
  */
 export async function renderStepBadge(
   screenshotBlob: Blob,
   stepNumber: number,
   coordinates: Coordinates | undefined,
+  viewport?: ViewportSize,
 ): Promise<Blob> {
   const bitmap = await createImageBitmap(screenshotBlob);
 
@@ -81,23 +113,29 @@ export async function renderStepBadge(
   ctx.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
 
-  // Draw badge at click coordinates or top-left corner
-  const badgeX = coordinates ? Math.min(coordinates.x, width - 16) : 20;
-  const badgeY = coordinates ? Math.min(coordinates.y, height - 16) : 20;
-  const radius = 14;
+  // Compute DPI scale: screenshot pixels / viewport CSS pixels
+  const dpr = viewport ? width / viewport.width : 1;
 
-  // Red circle
+  const badgeX = coordinates ? clamp(coordinates.x * dpr, 16, width - 16) : 20;
+  const badgeY = coordinates ? clamp(coordinates.y * dpr, 16, height - 16) : 20;
+
+  // Draw click indicator underneath the badge
+  if (coordinates) {
+    drawClickIndicator(ctx, badgeX, badgeY, dpr);
+  }
+
+  // Red circle badge with step number
+  const radius = 14 * dpr;
   ctx.beginPath();
   ctx.arc(badgeX, badgeY, radius, 0, Math.PI * 2);
   ctx.fillStyle = '#e53e3e';
   ctx.fill();
   ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2 * dpr;
   ctx.stroke();
 
-  // White number
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 14px sans-serif';
+  ctx.font = `bold ${14 * dpr}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(String(stepNumber), badgeX, badgeY);
@@ -106,7 +144,47 @@ export async function renderStepBadge(
   return resultBlob;
 }
 
+// ── Click Indicator ─────────────────────────────────────────────────────────
+
+/**
+ * Draw a 3-layer blue circle at (x, y) to indicate a click location.
+ * Inspired by Claude in Chrome's teach mode indicator.
+ */
+function drawClickIndicator(
+  ctx: OffscreenCanvasRenderingContext2D,
+  x: number,
+  y: number,
+  scaleFactor: number,
+): void {
+  ctx.save();
+
+  // Outer glow
+  ctx.beginPath();
+  ctx.arc(x, y, 18 * scaleFactor, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.25)';
+  ctx.fill();
+
+  // Inner circle
+  ctx.beginPath();
+  ctx.arc(x, y, 12 * scaleFactor, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+  ctx.fill();
+
+  // Border ring
+  ctx.beginPath();
+  ctx.arc(x, y, 12 * scaleFactor, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(59, 130, 246, 1.0)';
+  ctx.lineWidth = 2.5 * scaleFactor;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
 
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, base64] = dataUrl.split(',');

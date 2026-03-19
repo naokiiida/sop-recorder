@@ -280,6 +280,70 @@ article {
   font-style: italic;
 }
 
+/* ── Vertical step card (edit mode) ────────────────────────────────────────── */
+
+.sop-step-card--vertical {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.sop-step-card--vertical .sop-thumbnail-container {
+  position: relative;
+}
+
+.sop-step-card--vertical .sop-thumbnail--edit {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 0;
+}
+
+.sop-step-card--vertical .sop-thumbnail-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--pico-muted-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pico-muted-color);
+  font-size: 0.75rem;
+}
+
+.sop-step-card--vertical .sop-step-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  z-index: 1;
+}
+
+.sop-step-card--vertical .sop-hover-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  background: color-mix(in srgb, var(--pico-background-color) 60%, transparent);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.sop-step-card--vertical .sop-hover-actions button {
+  color: var(--pico-contrast);
+}
+
+.sop-step-card--vertical .sop-hover-actions .sop-danger {
+  color: var(--sop-danger-color);
+}
+
+.sop-step-content {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 /* ── Drag & drop ────────────────────────────────────────────────────────────── */
 
 .sop-step-card[draggable="true"] {
