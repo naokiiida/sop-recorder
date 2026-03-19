@@ -90,7 +90,7 @@ article {
   height: 22px;
   padding: 0 4px;
   background: var(--pico-primary, #1095c1);
-  color: #fff;
+  color: var(--pico-primary-inverse);
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -226,7 +226,7 @@ article {
 
 .sop-hover-actions button:hover {
   opacity: 1;
-  background: rgba(128, 128, 128, 0.15);
+  background: color-mix(in srgb, var(--pico-color) 15%, transparent);
 }
 
 .sop-hover-actions button:disabled {
@@ -241,7 +241,7 @@ article {
 
 .sop-hover-actions .sop-danger:hover {
   opacity: 1;
-  background: rgba(229, 62, 62, 0.1);
+  background: color-mix(in srgb, var(--sop-recording-color) 10%, transparent);
 }
 
 /* ── Danger button (stop recording, destructive actions) ───────────────────── */
@@ -249,7 +249,7 @@ article {
 .sop-btn-danger {
   background: var(--sop-recording-color);
   border-color: var(--sop-recording-color);
-  color: #fff;
+  color: var(--pico-primary-inverse);
 }
 
 .sop-btn-danger:hover {
@@ -306,7 +306,7 @@ article {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--pico-color) 30%, transparent);
   z-index: 100;
   animation: toast-in 250ms ease-out;
 }
@@ -333,3 +333,13 @@ article {
   .sop-pulse { animation: none; }
   .sop-undo-toast { animation: none; }
 }
+
+/* ── Semantic resets inside card contexts ──────────────────────────────────── */
+
+.sop-step-card figure { margin: 0; }
+section > header { padding: 0; margin: 0; }
+
+/* ── Utility classes ───────────────────────────────────────────────────────── */
+
+.sop-empty-state { text-align: center; padding: 2rem 0; }
+.sop-control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sop-gap-card); margin-bottom: var(--sop-gap-section); }
