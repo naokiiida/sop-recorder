@@ -36,10 +36,10 @@ export class SopHome extends LitElement {
 
   private renderEmpty() {
     return html`
-      <div style="text-align:center;padding:2rem 0;">
+      <section class="sop-empty-state">
         <p><strong>Record your first SOP</strong></p>
         <p class="sop-muted">Click "Start Recording" and interact with any web page.</p>
-      </div>
+      </section>
     `;
   }
 
@@ -54,9 +54,9 @@ export class SopHome extends LitElement {
         </h2>
         ${this.selecting ? html`<input type="checkbox" .checked=${allSelected} @change=${() => this.toggleSelectAll(allIds)} aria-label="Select all" />` : nothing}
       </div>
-      <div class="sop-stack sop-stack--tight">
+      <section class="sop-stack sop-stack--tight">
         ${this.recordings.map((rec) => this.renderCard(rec))}
-      </div>
+      </section>
     `;
   }
 
