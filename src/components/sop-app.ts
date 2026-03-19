@@ -107,6 +107,8 @@ export class SopApp extends LitElement {
   private handleExportRecording() {
     if (this.ctrl.loadedRecording) {
       this.ctrl.exportRecording(this.ctrl.loadedRecording.id);
+    } else {
+      console.warn('[SOP Recorder] Export skipped: no loaded recording');
     }
   }
 

@@ -11,6 +11,9 @@ importers:
       '@picocss/pico':
         specifier: ^2.1.1
         version: 2.1.1
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       lit:
         specifier: ^3.3.2
         version: 3.3.2

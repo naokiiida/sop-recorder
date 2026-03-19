@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@picocss/pico": "^2.1.1",
+    "jszip": "^3.10.1",
     "lit": "^3.3.2",
     "lucide": "^0.577.0"
   }

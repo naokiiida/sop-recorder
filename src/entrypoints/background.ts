@@ -19,6 +19,8 @@ import { ChromeTabAdapter } from '../adapters/chrome/tab-adapter.js';
 import { ChromeMessageBus } from '../adapters/chrome/message-bus.js';
 import { ChromeAlarmAdapter } from '../adapters/chrome/alarm-adapter.js';
 import { QuotaManager } from '../adapters/chrome/quota-manager.js';
+import { ChromeDownloadAdapter } from '../adapters/chrome/download-adapter.js';
+import { exportAsZip } from '../core/zip-exporter.js';
 
 // ── Instantiate adapters and core modules ───────────────────────────────────
 
@@ -30,6 +32,7 @@ const tabAdapter = new ChromeTabAdapter();
 const messageBus = new ChromeMessageBus();
 const alarmAdapter = new ChromeAlarmAdapter();
 const quotaManager = new QuotaManager(storageAdapter, blobStore);
+const downloadAdapter = new ChromeDownloadAdapter();
 
 // Track active recording tab and panel port
 let activeTabId: number | null = null;
@@ -157,8 +160,18 @@ async function handlePanelMessage(message: PanelMessage): Promise<void> {
       break;
     }
     case 'EXPORT_RECORDING': {
-      // Export will be implemented in Sprint 6
-      activePanelPort?.postMessage({ type: 'ERROR', message: 'Export not yet implemented' });
+      try {
+        const recording = await storageAdapter.getRecording(message.recordingId);
+        if (!recording) {
+          activePanelPort?.postMessage({ type: 'ERROR', message: 'Recording not found' });
+          break;
+        }
+        const { blob, filename } = await exportAsZip(recording, (key) => blobStore.get(key));
+        await downloadAdapter.downloadBlob(blob, filename);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Export failed';
+        activePanelPort?.postMessage({ type: 'ERROR', message: errorMessage });
+      }
       break;
     }
   }
@@ -356,6 +369,7 @@ async function saveCurrentRecording(): Promise<void> {
   };
 
   await storageAdapter.saveRecording(recording);
+  activePanelPort?.postMessage({ type: 'RECORDING_LOADED', recording });
   activePanelPort?.postMessage({ type: 'STATE_UPDATE', state: 'idle' });
 }
 

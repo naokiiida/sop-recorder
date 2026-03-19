@@ -1,6 +1,7 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { RecordedStep, Recording } from '../core/types.js';
+import { generateMarkdown } from '../core/export-engine.js';
 import type { SopStepCard } from './sop-step-card.js';
 import { icon, Trash2 } from './icons.js';
 import './sop-step-card.js';
@@ -19,6 +20,7 @@ export class SopEditor extends LitElement {
   @state() private editTitleValue = '';
   @state() private undoStep: RecordedStep | null = null;
   @state() private undoTimer: ReturnType<typeof setTimeout> | null = null;
+  @state() private copyFeedback = false;
 
   override createRenderRoot() {
     return this;
@@ -85,8 +87,12 @@ export class SopEditor extends LitElement {
           : nothing}
 
         ${stepCount > 0
-          ? html`<button class="contrast" style="width:100%;margin-top:var(--sop-gap-section);" @click=${this.handleExport}>
+          ? html`
+            <button class="contrast" style="width:100%;margin-top:var(--sop-gap-section);" @click=${this.handleExport}>
               Export as ZIP
+            </button>
+            <button class="outline" style="width:100%;margin-top:var(--sop-gap-card);" @click=${this.handleCopyMarkdown}>
+              ${this.copyFeedback ? 'Copied!' : 'Copy Markdown'}
             </button>`
           : nothing}
 
@@ -248,6 +254,45 @@ export class SopEditor extends LitElement {
 
   private handleExport() {
     this.dispatchEvent(new CustomEvent('export-recording', { bubbles: true, composed: true }));
+  }
+
+  private async handleCopyMarkdown() {
+    const recording = this.recording ?? this.buildFallbackRecording();
+    if (!recording) return;
+    try {
+      const markdown = generateMarkdown(recording, 'clipboard');
+      await navigator.clipboard.writeText(markdown);
+      this.copyFeedback = true;
+      setTimeout(() => {
+        this.copyFeedback = false;
+      }, 2000);
+    } catch {
+      this.dispatchEvent(
+        new CustomEvent('show-error', {
+          detail: { message: 'Failed to copy to clipboard' },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
+  }
+
+  private buildFallbackRecording(): Recording | null {
+    if (this.steps.length === 0) return null;
+    const firstStep = this.steps[0]!;
+    return {
+      id: '',
+      title: 'Untitled SOP',
+      createdAt: firstStep.timestamp,
+      updatedAt: Date.now(),
+      steps: this.steps,
+      metadata: {
+        startUrl: firstStep.pageUrl,
+        startPageTitle: firstStep.pageTitle,
+        browserVersion: '',
+        stepCount: this.steps.length,
+      },
+    };
   }
 
   private handleDeleteRecording() {
