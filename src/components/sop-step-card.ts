@@ -34,59 +34,63 @@ export class SopStepCard extends LitElement {
   override render() {
     if (!this.step) return nothing;
 
-    const thumbClass = this.mode === 'live'
-      ? 'sop-thumbnail sop-thumbnail--live'
-      : 'sop-thumbnail sop-thumbnail--edit';
+    if (this.mode === 'edit') return this.renderEditMode();
+    return this.renderLiveMode();
+  }
 
+  private renderLiveMode() {
     return html`
-      <article class="sop-step-card"
-        draggable=${this.mode === 'edit' ? 'true' : 'false'}
-        @dragstart=${this.mode === 'edit' ? this.handleDragStart : nothing}
-        @dragend=${this.mode === 'edit' ? this.handleDragEnd : nothing}
-      >
-        <!-- Thumbnail -->
+      <article class="sop-step-card">
         <figure>
           ${this.step.thumbnailDataUrl
             ? html`<img
                 src=${this.step.thumbnailDataUrl}
                 alt="Step ${this.step.sequenceNumber}"
-                class=${thumbClass}
-                @click=${this.mode === 'edit' ? this.handleThumbnailClick : nothing}
+                class="sop-thumbnail sop-thumbnail--live"
               />`
-            : html`<figure class=${thumbClass} style="background:var(--pico-muted-border-color);display:flex;align-items:center;justify-content:center;color:var(--pico-muted-color);font-size:0.65rem;">No img</figure>`}
+            : html`<div class="sop-thumbnail sop-thumbnail--live" style="background:var(--pico-muted-border-color);display:flex;align-items:center;justify-content:center;color:var(--pico-muted-color);font-size:0.65rem;">No img</div>`}
         </figure>
-
-        <!-- Content -->
         <div style="min-width:0;display:flex;flex-direction:column;gap:4px;">
-          <!-- Header row: badge + title + hover actions -->
-          <div class="sop-flex-between">
-            <div class="sop-flex" style="min-width:0;flex:1;gap:6px;">
-              ${this.mode === 'edit'
-                ? html`<span class="sop-step-badge">${this.step.sequenceNumber}</span>`
-                : nothing}
-              ${this.renderTitle()}
-            </div>
-
-            ${this.mode === 'edit'
-              ? html`
-                <div class="sop-hover-actions">
-                  <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move up">${icon(ChevronUp, 14)}</button>
-                  <button @click=${this.handleMoveDown} ?disabled=${this.isLast} aria-label="Move down">${icon(ChevronDown, 14)}</button>
-                  <button class="sop-danger" @click=${this.handleDelete} aria-label="Delete step">${icon(Trash2, 14)}</button>
-                </div>
-              `
-              : nothing}
+          <div class="sop-flex" style="min-width:0;flex:1;gap:6px;">
+            ${this.renderTitle()}
           </div>
+        </div>
+      </article>
+    `;
+  }
 
-          <!-- URL: hidden in live, secondary in edit -->
-          ${this.mode === 'edit'
-            ? html`<small class="sop-muted sop-truncate" style="font-size:0.8rem;color:var(--pico-muted-color);" title=${this.step.pageUrl}>
-                ${this.truncateUrl(this.step.pageUrl)}
-              </small>`
-            : nothing}
+  private renderEditMode() {
+    return html`
+      <article class="sop-step-card sop-step-card--vertical"
+        draggable="true"
+        @dragstart=${this.handleDragStart}
+        @dragend=${this.handleDragEnd}
+      >
+        <!-- Thumbnail container with badge & action overlays -->
+        <div class="sop-thumbnail-container">
+          ${this.step.thumbnailDataUrl
+            ? html`<img
+                src=${this.step.thumbnailDataUrl}
+                alt="Step ${this.step.sequenceNumber}"
+                class="sop-thumbnail sop-thumbnail--edit"
+                @click=${this.handleThumbnailClick}
+              />`
+            : html`<div class="sop-thumbnail-placeholder">No img</div>`}
+          <span class="sop-step-badge">${this.step.sequenceNumber}</span>
+          <div class="sop-hover-actions">
+            <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move up">${icon(ChevronUp, 14)}</button>
+            <button @click=${this.handleMoveDown} ?disabled=${this.isLast} aria-label="Move down">${icon(ChevronDown, 14)}</button>
+            <button class="sop-danger" @click=${this.handleDelete} aria-label="Delete step">${icon(Trash2, 14)}</button>
+          </div>
+        </div>
 
-          <!-- Description: edit mode only -->
-          ${this.mode === 'edit' ? this.renderDescription() : nothing}
+        <!-- Content below thumbnail -->
+        <div class="sop-step-content">
+          ${this.renderTitle()}
+          <small class="sop-muted sop-truncate" style="font-size:0.8rem;color:var(--pico-muted-color);" title=${this.step.pageUrl}>
+            ${this.truncateUrl(this.step.pageUrl)}
+          </small>
+          ${this.renderDescription()}
         </div>
       </article>
     `;
