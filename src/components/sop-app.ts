@@ -28,7 +28,7 @@ export class SopApp extends LitElement {
         : nothing}
 
       ${this.ctrl.error
-        ? html`<p role="alert" style="color:var(--sop-recording-color);font-size:0.85rem;margin:0 0 8px;">${this.ctrl.error}</p>`
+        ? html`<p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;margin:0 0 8px;">${this.ctrl.error}</p>`
         : nothing}
 
       ${this.renderView()}

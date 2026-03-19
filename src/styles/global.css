@@ -4,16 +4,19 @@
 /* ── Custom properties ──────────────────────────────────────────────────────── */
 
 :root {
-  /* Accent colors */
+  /* Accent colors — recording state indicators */
   --sop-recording-color: #e53e3e;
   --sop-paused-color: #d69e2e;
 
+  /* Semantic colors — destructive actions, errors */
+  --sop-danger-color: #e53e3e;
+
   /* Cards & borders — theme-aware using PicoCSS vars */
-  --sop-step-border: 1px solid var(--pico-muted-border-color);
+  --sop-card-border: 1px solid var(--pico-muted-border-color);
   --sop-card-hover: color-mix(in srgb, var(--pico-card-background-color) 85%, var(--pico-color) 15%);
 
-  /* Editable fields — theme-aware (works in light and dark) */
-  --sop-editable-hover-bg: color-mix(in srgb, var(--pico-card-background-color) 90%, var(--pico-color) 10%);
+  /* Subtle hover highlight — editable fields, nav buttons */
+  --sop-subtle-hover-bg: color-mix(in srgb, var(--pico-card-background-color) 90%, var(--pico-color) 10%);
 
   /* Spacing (4px base unit) */
   --sop-gap-card: 8px;
@@ -57,7 +60,7 @@ article {
 
 .sop-back-button:hover {
   color: var(--pico-primary);
-  background: var(--sop-editable-hover-bg);
+  background: var(--sop-subtle-hover-bg);
 }
 
 /* ── Recording indicator ────────────────────────────────────────────────────── */
@@ -157,7 +160,7 @@ article {
 
 .sop-rec-card {
   padding: 12px;
-  border: var(--sop-step-border);
+  border: var(--sop-card-border);
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s;
@@ -178,7 +181,7 @@ article {
   grid-template-columns: auto 1fr;
   gap: var(--sop-gap-card);
   padding: 12px;
-  border: var(--sop-step-border);
+  border: var(--sop-card-border);
   border-radius: 8px;
   position: relative;
   transition: background 0.15s;
@@ -235,26 +238,26 @@ article {
 }
 
 .sop-hover-actions .sop-danger {
-  color: var(--sop-recording-color);
+  color: var(--sop-danger-color);
   opacity: 0.8;
 }
 
 .sop-hover-actions .sop-danger:hover {
   opacity: 1;
-  background: color-mix(in srgb, var(--sop-recording-color) 10%, transparent);
+  background: color-mix(in srgb, var(--sop-danger-color) 10%, transparent);
 }
 
 /* ── Danger button (stop recording, destructive actions) ───────────────────── */
 
 .sop-btn-danger {
-  background: var(--sop-recording-color);
-  border-color: var(--sop-recording-color);
+  background: var(--sop-danger-color);
+  border-color: var(--sop-danger-color);
   color: var(--pico-primary-inverse);
 }
 
 .sop-btn-danger:hover {
-  background: color-mix(in srgb, var(--sop-recording-color) 85%, #000 15%);
-  border-color: color-mix(in srgb, var(--sop-recording-color) 85%, #000 15%);
+  background: color-mix(in srgb, var(--sop-danger-color) 85%, #000 15%);
+  border-color: color-mix(in srgb, var(--sop-danger-color) 85%, #000 15%);
 }
 
 /* ── Editable field affordance ──────────────────────────────────────────────── */
@@ -268,7 +271,7 @@ article {
 }
 
 .sop-editable:hover {
-  background: var(--sop-editable-hover-bg);
+  background: var(--sop-subtle-hover-bg);
   border-color: var(--pico-primary);
 }
 
