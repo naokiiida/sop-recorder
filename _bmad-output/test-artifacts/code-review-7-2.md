@@ -1,72 +1,142 @@
-# Code Review Report: Story 7.2 Accessibility Compliance
+# Code Review Report: Story 7.2 — Accessibility Compliance
 
-## Executive Summary
-The implementation provides a strong foundation for WCAG 2.1 AA compliance, particularly in focus management and screen reader announcements. However, a critical omission of `tabindex` on draggable cards prevents keyboard users from using the newly implemented reordering shortcuts. Additionally, nested interactivity in the home view selection mode may confuse screen reader users.
+**Commit:** `14245068` | **Date:** 2026-03-20 | **Review mode:** full (3-layer adversarial)
+**Layers:** Blind Hunter, Edge Case Hunter, Acceptance Auditor — all completed successfully.
 
 ## Triage Summary
-| Category | Count | Description |
-| --- | --- | --- |
-| 🔴 CRITICAL | 1 | Functional breakage for keyboard users (shortcuts inaccessible). |
-| 🟠 MAJOR | 1 | Nested interactivity and missing selection state in ARIA labels. |
-| 🟡 MINOR | 2 | Announcement and focus restoration omissions. |
-| 🔵 CONSIDERATION | 2 | UX/A11y enhancements for better clarity. |
+
+| Category   | Count | Description |
+|------------|-------|-------------|
+| Bad Spec   | 3     | Spec prescribes incorrect ARIA patterns |
+| Patch      | 10    | Code issues fixable without spec changes |
+| Defer      | 2     | Pre-existing issues, not caused by this change |
+| Rejected   | 4     | False positives / noise |
 
 ---
 
-## 🔴 CRITICAL FINDINGS
+## Bad Spec
 
-### 1. Draggable Step Cards Missing Tabindex
-- **File**: `src/components/sop-step-card.ts`
-- **Issue**: The `<article>` element in `renderEditMode` lacks `tabindex="0"`.
-- **Impact**: Keyboard users cannot focus the card itself. Since the `Alt+Arrow` and `Delete` handlers are attached to this article, these shortcuts are completely inaccessible to keyboard-only users. Furthermore, `sop-app.ts`'s focus management fails to focus the first card when entering the editor.
-- **Remediation**: Add `tabindex="0"` to the `<article>` in `renderEditMode`.
+*These findings suggest the spec should be amended before continuing.*
 
----
+### BS-1: `role="application"` on root wrapper is harmful
 
-## 🟠 MAJOR FINDINGS
+The spec's Task 8.1 prescribes `role="application"` on the root element. This tells screen readers to stop intercepting keystrokes, disabling standard navigation (heading jump, landmarks, list browsing). Appropriate only for widget-heavy UIs like spreadsheets — not this standard document-like interface.
 
-### 2. Nested Interactivity in Recording Selection
-- **File**: `src/components/sop-home.ts`
-- **Issue**: In selection mode, a native `<input type="checkbox">` is rendered inside an `<article role="button" tabindex="0">`.
-- **Impact**: This creates a "button inside a button" anti-pattern. Screen readers may struggle to navigate or activate the internal checkbox correctly. Additionally, the checkbox lacks an `aria-label`.
-- **Remediation**: Add `tabindex="-1"` and `aria-hidden="true"` to the internal checkbox since the entire card toggles selection via the parent's `@click`. Ensure the `aria-label` on the parent article reflects the selected state (e.g., `"Selected, [Title], [Steps]"`).
+- **Location:** `src/components/sop-app.ts:49`
+- **Suggested amendment:** Remove `role="application"`. Use `aria-label="SOP Recorder"` on the `<div>` or a `<main>` element without the application role.
 
----
+### BS-2: Announce text says "Ctrl+Z" but no Ctrl+Z handler exists
 
-## 🟡 MINOR FINDINGS
+Task 9.3 says announce "Step deleted. Press Ctrl+Z to undo." but no Ctrl+Z keyboard listener is implemented anywhere. The only undo mechanism is the visual toast button. This misleads screen reader users.
 
-### 3. First Step Captured Announcement Skipped
-- **File**: `src/components/sop-recording.ts`
-- **Issue**: The logic `if (this.steps.length > this.previousStepCount && this.previousStepCount > 0)` explicitly skips the announcement for the first step (where `previousStepCount` is 0).
-- **Impact**: Screen reader users miss the confirmation for the first action they take.
-- **Remediation**: Change condition to `this.previousStepCount >= 0` or ensure the first step is captured and announced.
+- **Location:** `src/components/sop-editor.ts:180`
+- **Suggested amendment:** Either (a) add a Ctrl+Z keydown listener that triggers `handleUndo()`, or (b) change the announcement to "Step deleted" and let the toast button speak for itself.
 
-### 4. Missing Focus Restoration for Recording Title
-- **File**: `src/components/sop-editor.ts`
-- **Issue**: Unlike `sop-step-card.ts`, the `saveTitle` and `cancelTitleEdit` methods do not return focus to the `h2.sop-editable` button.
-- **Impact**: Focus is lost after editing the recording title, requiring the user to re-tab through the entire page.
-- **Remediation**: Implement a `focusEditableTitle` method using `requestAnimationFrame` and call it after title edits.
+### BS-3: Spec uses `role="button"` on non-button elements instead of semantic buttons
+
+Tasks 2.1-2.4, 3.1, and 8.1 prescribe `tabindex="0"` + `role="button"` on `<h2>`, `<strong>`, `<p>`, and `<article>`. This contradicts the spec's own anti-pattern: "Do NOT add aria attributes that duplicate native semantics." The correct approach is to use actual `<button>` elements.
+
+- **Location:** `sop-editor.ts:59`, `sop-step-card.ts:129`, `sop-step-card.ts:208`, `sop-home.ts:79`
+- **Suggested amendment:** Refactor to use `<button>` elements styled to match the current design.
 
 ---
 
-## 🔵 CONSIDERATIONS
+## Patch
 
-### 5. ARIA Label Dynamic Updates
-- **File**: `src/components/sop-home.ts`
-- **Suggestion**: When `this.selecting` is true, the `aria-label` for recording cards should ideally include "Selected" or "Not selected" to provide immediate feedback on the state.
+*Fixable code issues — prioritized by impact.*
 
-### 6. Live Mode Card Semantic Clarity
-- **File**: `src/components/sop-step-card.ts`
-- **Suggestion**: In `live` mode, the step card is read-only but styled similarly to the interactive cards. Consider if a `role="listitem"` would be more appropriate for the step feed container.
+### P-1: CRITICAL — Edit-mode `<article>` missing `tabindex="0"`
+
+The edit-mode `<article>` has `@keydown`, `aria-roledescription`, and `aria-label` but **no `tabindex`**. Since `<article>` is not natively focusable, this breaks: keyboard shortcuts (Alt+Arrow, Delete), focus after delete/reorder, and focus-visible styles. **This breaks AC 1, 4, and 6.**
+
+- **Location:** `src/components/sop-step-card.ts:65`
+- **Fix:** Add `tabindex="0"` to the edit-mode `<article>`.
+
+### P-2: MAJOR — `handleUndo()` doesn't restore the deleted step
+
+`handleUndo()` only clears `undoStep` and the timer — it never dispatches an event to re-insert the step. The undo button in the toast is non-functional.
+
+- **Location:** `src/components/sop-editor.ts:194-200`
+- **Fix:** Dispatch a `restore-step` event that re-inserts `this.undoStep` at its original position.
+
+### P-3: MAJOR — Duplicate screen reader announcements for recording state
+
+The `<strong>` element has `role="status" aria-live="assertive"` AND `updated()` calls `announce()` with assertive priority. Screen readers announce every state change twice.
+
+- **Location:** `src/components/sop-recording.ts:59-62` + `src/components/sop-recording.ts:25-37`
+- **Fix:** Remove the inline `role="status" aria-live="assertive"` from `<strong>` and keep the `announce()` calls.
+
+### P-4: MAJOR — Lightbox initial focus fires before Lit renders
+
+`connectedCallback` queues `requestAnimationFrame` to focus the close button, but Lit hasn't rendered yet. The `querySelector` returns `null` and focus is never moved into the lightbox.
+
+- **Location:** `src/components/sop-screenshot-lightbox.ts:26-30`
+- **Fix:** Move focus logic to `firstUpdated()` or `override updated()` with a first-render guard.
+
+### P-5: MAJOR — `announce()` rapid-fire calls swallow messages
+
+No debounce or rAF cancellation. If called twice in the same frame, the second call clears the first's text before the rAF callback delivers it.
+
+- **Location:** `src/components/sop-app.ts:12-19`
+- **Fix:** Store the rAF ID and call `cancelAnimationFrame` before scheduling a new one.
+
+### P-6: MINOR — Lightbox trigger stores `e.target` pointing to `sop-editor`
+
+The `show-lightbox` event is re-dispatched by `sop-editor`, so `e.target` in `sop-app.handleShowLightbox` is `sop-editor`. Focus restoration after close calls `focus()` on `sop-editor` which has no tabindex — focus is lost.
+
+- **Location:** `src/components/sop-app.ts:215`
+- **Fix:** Pass the trigger element in event detail or use `e.composedPath()[0]`.
+
+### P-7: MINOR — `manageFocusForTransition` to edit view only handles `from === 'recording'`
+
+Loading a saved recording from home (`home -> edit`) doesn't trigger focus management. Focus falls to `<body>`.
+
+- **Location:** `src/components/sop-app.ts:95-98`
+- **Fix:** Change condition to `to === 'edit'` (remove `from === 'recording'` guard).
+
+### P-8: MINOR — `Delete` key has no modifier or confirmation guard
+
+Pressing `Delete` while a step card has focus immediately deletes the step. Easy to trigger accidentally since `Delete` is adjacent to `Backspace`.
+
+- **Location:** `src/components/sop-step-card.ts:268-270`
+- **Fix:** Require a modifier (e.g., `Alt+Delete`) or ensure undo works reliably first.
+
+### P-9: NIT — `*:focus-within > .sop-hover-actions` is too broad
+
+Universal `*` with `:focus-within` forces re-evaluation on every focus change. Performance concern for large step lists.
+
+- **Location:** `src/styles/global.css` (~line 450)
+- **Fix:** Scope to `.sop-thumbnail-container:focus-within > .sop-hover-actions`.
+
+### P-10: NIT — Axe-core test only covers home view
+
+Recording and editor views (where most ARIA complexity lives) are untested.
+
+- **Location:** `tests/e2e/accessibility.spec.ts`
+- **Fix:** Add test cases for recording and editor views.
 
 ---
 
-## Validation Status
-- [x] Announcer infrastructure (sop-app.ts)
-- [x] Keyboard shortcuts (sop-step-card.ts - implementation logic correct, but trigger missing tabindex)
-- [x] Focus management (sop-app.ts - logic correct, but target in editor not focusable)
-- [x] ARIA attributes (sop-recording.ts, sop-editor.ts)
-- [x] Lightbox focus trap (sop-screenshot-lightbox.ts)
-- [x] Axe-core E2E test (Home view only)
+## Defer
 
-**Verdict**: Implementation is 90% complete but requires surgical fixes for the critical `tabindex` and major `nested interactivity` issues before it can be considered truly compliant.
+*Pre-existing issues not caused by this change.*
+
+### D-1: CSS `transition` properties not disabled under `prefers-reduced-motion`
+
+Various `transition: background 0.15s`, `transition: opacity 0.15s` throughout global.css are not disabled. Pre-existing issue.
+
+### D-2: `Shift+Enter` multi-select shortcut is undiscoverable
+
+No visible affordance or help text reveals the shortcut. Design gap, not a code bug.
+
+---
+
+## Verdict
+
+Implementation covers ~85% of the accessibility story, but **P-1 (missing tabindex) alone breaks keyboard navigation for edit-mode step cards** — the most critical AC in this story. Combined with P-2 (broken undo) and P-3 (duplicate announcements), these must be fixed before the story can move to `done`.
+
+**Recommended priority:**
+1. P-1, P-2, P-3, P-4 — functional breakage, fix immediately
+2. BS-1, BS-2 — spec issues, amend and fix
+3. P-5 through P-8 — quality improvements
+4. BS-3, P-9, P-10 — refactoring / polish
