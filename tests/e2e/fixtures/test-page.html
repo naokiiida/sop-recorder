@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SOP Recorder Test Page</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; }
+    button, input, select, a { min-height: 32px; min-width: 60px; padding: 6px 12px; }
+    section { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Test Page</h1>
+
+  <section>
+    <h2>Actions</h2>
+    <button data-testid="btn-save">Save</button>
+    <button data-testid="btn-cancel">Cancel</button>
+    <a href="#section2" data-testid="link-nav">Go to Section 2</a>
+  </section>
+
+  <section>
+    <h2>Inputs</h2>
+    <input type="text" data-testid="input-name" placeholder="Enter name" />
+    <select data-testid="select-role">
+      <option value="admin">Admin</option>
+      <option value="user">User</option>
+    </select>
+    <label>
+      <input type="checkbox" data-testid="checkbox-agree" /> I agree
+    </label>
+  </section>
+
+  <section>
+    <h2>Form</h2>
+    <form data-testid="form-login" onsubmit="event.preventDefault();">
+      <input type="text" data-testid="input-username" placeholder="Username" />
+      <input type="password" data-testid="input-password" placeholder="Password" />
+      <button type="submit" data-testid="btn-submit">Submit</button>
+    </form>
+  </section>
+
+  <div id="section2">
+    <h2>Section 2</h2>
+    <p>Navigated here via anchor link.</p>
+  </div>
+</body>
+</html>

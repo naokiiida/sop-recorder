@@ -168,6 +168,7 @@ export class SopApp extends LitElement {
           @update-step=${this.handleUpdateStep}
           @reorder-steps=${this.handleReorderSteps}
           @export-recording=${this.handleExportRecording}
+          @delete-recording=${this.handleDeleteFromEditor}
           @show-lightbox=${this.handleShowLightbox}
           @show-error=${this.handleShowError}
         ></sop-editor>`;
@@ -189,6 +190,13 @@ export class SopApp extends LitElement {
 
   private handleDeleteRecording(e: CustomEvent<{ recordingId: string }>) {
     this.ctrl.deleteRecording(e.detail.recordingId);
+  }
+
+  private handleDeleteFromEditor(e: CustomEvent<{ recordingId: string }>) {
+    this.ctrl.deleteRecording(e.detail.recordingId);
+    this.ctrl.loadedRecording = null;
+    this.ctrl.navigateTo('home');
+    this.ctrl.listRecordings();
   }
 
   private handleDeleteStep(e: CustomEvent<{ stepId: string }>) {
