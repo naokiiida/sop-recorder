@@ -1,3 +1,6 @@
+// NOTE: ES module spec hoists import declarations before body code.
+// This mark measures cold start correctly only because WXT's bundler
+// inlines imports, placing this call at the true top of the bundle.
 performance.mark('sw-start');
 import { RecordingStateMachine } from '../core/recording-state-machine.js';
 import { StepManager } from '../core/step-manager.js';
@@ -110,14 +113,17 @@ export default defineBackground(() => {
       if (stateMachine.getState() === 'paused') {
         Logger.warn('background', 'Attempting re-injection after leaving restricted page', { url });
         activePanelPort?.postMessage({ type: 'PAGE_RECORDABLE' });
-        tabAdapter.injectContentScript(tabId).then(() => {
-          tabAdapter.sendMessageToTab(tabId, { type: 'START_CAPTURE' }).catch(() => {});
-          stateMachine.resume();
-          persistSessionState().catch(() => {});
-          activePanelPort?.postMessage({ type: 'STATE_UPDATE', state: 'recording' });
-        }).catch((err) => {
-          Logger.error('background', 'Re-injection failed', { originalError: err });
-        });
+        tabAdapter
+          .injectContentScript(tabId)
+          .then(() => {
+            tabAdapter.sendMessageToTab(tabId, { type: 'START_CAPTURE' }).catch(() => {});
+            stateMachine.resume();
+            persistSessionState().catch(() => {});
+            activePanelPort?.postMessage({ type: 'STATE_UPDATE', state: 'recording' });
+          })
+          .catch((err) => {
+            Logger.error('background', 'Re-injection failed', { originalError: err });
+          });
       }
     }
   });
@@ -222,7 +228,9 @@ async function startRecording(): Promise<void> {
   // Check storage quota before starting
   const quota = await quotaManager.checkQuota();
   if (quota.isFull) {
-    Logger.warn('background', 'Recording blocked — storage full', { percentUsed: quota.percentUsed });
+    Logger.warn('background', 'Recording blocked — storage full', {
+      percentUsed: quota.percentUsed,
+    });
     activePanelPort?.postMessage({ type: 'QUOTA_FULL' });
     activePanelPort?.postMessage({
       type: 'ERROR',
@@ -270,9 +278,13 @@ async function startRecording(): Promise<void> {
     // Distinguish "already injected" from real injection failure
     const errMsg = err instanceof Error ? err.message : String(err);
     if (isRestrictedUrl(tab.url)) {
-      Logger.warn('background', 'Content script injection failed on restricted page', { url: tab.url });
+      Logger.warn('background', 'Content script injection failed on restricted page', {
+        url: tab.url,
+      });
     } else {
-      Logger.warn('background', 'Content script injection skipped (may already exist)', { error: errMsg });
+      Logger.warn('background', 'Content script injection skipped (may already exist)', {
+        error: errMsg,
+      });
     }
   }
 
@@ -280,7 +292,9 @@ async function startRecording(): Promise<void> {
     await tabAdapter.sendMessageToTab(tab.id, { type: 'START_CAPTURE' });
     Logger.warn('background', 'START_CAPTURE sent', { tabId: tab.id });
   } catch (err) {
-    Logger.warn('background', 'START_CAPTURE failed (content script not ready yet)', { originalError: err });
+    Logger.warn('background', 'START_CAPTURE failed (content script not ready yet)', {
+      originalError: err,
+    });
   }
 
   // Notify panel
@@ -339,7 +353,12 @@ async function toggleRecording(): Promise<void> {
 // ── Step Capture Flow ───────────────────────────────────────────────────────
 
 async function handleStepCaptured(event: CapturedEvent, tabId: number): Promise<void> {
-  Logger.warn('background', 'STEP_CAPTURED received', { type: event.type, tabId, state: stateMachine.getState(), activeTabId });
+  Logger.warn('background', 'STEP_CAPTURED received', {
+    type: event.type,
+    tabId,
+    state: stateMachine.getState(),
+    activeTabId,
+  });
   if (stateMachine.getState() !== 'recording') return;
   if (tabId !== activeTabId) return;
 
@@ -361,20 +380,34 @@ async function handleStepCaptured(event: CapturedEvent, tabId: number): Promise<
 
     // 3. Generate zoomed thumbnail from clean screenshot (before badge)
     try {
-      thumbnailDataUrl = await generateThumbnail(screenshotBlob, event.clickCoordinates, event.viewport);
+      thumbnailDataUrl = await generateThumbnail(
+        screenshotBlob,
+        event.clickCoordinates,
+        event.viewport,
+      );
     } catch {
       // Thumbnail generation failed — not critical
     }
 
     // 4. Render step badge + click indicator on full screenshot
-    const badgedBlob = await renderStepBadge(screenshotBlob, stepNumber, event.clickCoordinates, event.viewport);
+    const badgedBlob = await renderStepBadge(
+      screenshotBlob,
+      stepNumber,
+      event.clickCoordinates,
+      event.viewport,
+    );
 
     // 5. Store screenshot blob
     screenshotBlobKey = `${activeRecordingId}_step_${stepNumber}`;
     await blobStore.put(screenshotBlobKey, badgedBlob);
 
     const captureLatency = performance.now() - captureStart;
-    console.debug(`[SOP Recorder] Screenshot capture latency: ${captureLatency.toFixed(1)}ms (target: <300ms)`);
+    console.debug(
+      `[SOP Recorder] Screenshot pipeline (capture+thumb+badge+store): ${captureLatency.toFixed(1)}ms (target: <300ms)`,
+    );
+  } else {
+    const captureLatency = performance.now() - captureStart;
+    console.debug(`[SOP Recorder] Screenshot capture failed after ${captureLatency.toFixed(1)}ms`);
   }
 
   // 6. Remove overlay
@@ -464,7 +497,10 @@ async function recoverState(): Promise<void> {
       alarmAdapter.createKeepalive();
     }
 
-    Logger.warn('background', 'State recovered', { state: session.state, stepCount: session.steps.length });
+    Logger.warn('background', 'State recovered', {
+      state: session.state,
+      stepCount: session.steps.length,
+    });
 
     // Notify connected panel with full state sync
     sendStateToPanel();
@@ -479,9 +515,7 @@ async function deleteRecordingWithBlobs(recordingId: string): Promise<void> {
   const recording = await storageAdapter.getRecording(recordingId);
   if (recording) {
     // Delete associated screenshot blobs
-    const blobKeys = recording.steps
-      .map((s) => s.screenshotBlobKey)
-      .filter((k) => k.length > 0);
+    const blobKeys = recording.steps.map((s) => s.screenshotBlobKey).filter((k) => k.length > 0);
     if (blobKeys.length > 0) {
       await blobStore.deleteMany(blobKeys);
     }
