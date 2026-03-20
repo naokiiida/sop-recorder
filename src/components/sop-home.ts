@@ -10,6 +10,7 @@ import { icon, Trash2, Download } from './icons.js';
 @customElement('sop-home')
 export class SopHome extends LitElement {
   @property({ type: Array }) recordings: RecordingMetadata[] = [];
+  @property({ type: Number }) storagePercentUsed = 0;
 
   @state() private selecting = false;
   @state() private selected: Set<string> = new Set();
@@ -23,6 +24,12 @@ export class SopHome extends LitElement {
   override render() {
     return html`
       <section>
+        ${this.storagePercentUsed >= 0.8
+          ? html`<p role="alert" class="sop-storage-banner" style="color:var(--sop-danger-color);background:color-mix(in srgb, var(--sop-danger-color) 10%, transparent);border:1px solid var(--sop-danger-color);border-radius:var(--sop-card-radius, 8px);padding:8px 12px;font-size:0.85rem;margin-bottom:var(--sop-gap-section);">
+              Storage is ${Math.round(this.storagePercentUsed * 100)}% full. Export or delete old recordings to free space.
+            </p>`
+          : nothing}
+
         ${this.selecting ? this.renderBatchBar() : html``}
 
         <button class="contrast" style="width:100%;margin-bottom:var(--sop-gap-section);" @click=${this.handleStart}>

@@ -237,15 +237,15 @@ async function startRecording(): Promise<void> {
   }
 
   const tab = await tabAdapter.getCurrentTab();
-  console.log('[SOP Recorder] startRecording — active tab:', tab);
+  Logger.warn('background', 'startRecording — active tab', { tabId: tab?.id, url: tab?.url });
   if (!tab) {
-    console.warn('[SOP Recorder] No active tab found');
+    Logger.warn('background', 'No active tab found');
     activePanelPort?.postMessage({ type: 'ERROR', message: 'No active tab found' });
     return;
   }
 
   stateMachine.start();
-  console.log('[SOP Recorder] Recording started on tab', tab.id, tab.url);
+  Logger.warn('background', 'Recording started', { tabId: tab.id, url: tab.url });
   activeTabId = tab.id;
   activeRecordingId = crypto.randomUUID();
   stepManager.clear();
@@ -265,7 +265,7 @@ async function startRecording(): Promise<void> {
   // Inject and start content script
   try {
     await tabAdapter.injectContentScript(tab.id);
-    console.log('[SOP Recorder] Content script injected');
+    Logger.warn('background', 'Content script injected', { tabId: tab.id });
   } catch (err) {
     // Distinguish "already injected" from real injection failure
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -278,9 +278,9 @@ async function startRecording(): Promise<void> {
 
   try {
     await tabAdapter.sendMessageToTab(tab.id, { type: 'START_CAPTURE' });
-    console.log('[SOP Recorder] START_CAPTURE sent to tab', tab.id);
+    Logger.warn('background', 'START_CAPTURE sent', { tabId: tab.id });
   } catch (err) {
-    console.warn('[SOP Recorder] START_CAPTURE failed (content script not ready yet):', err);
+    Logger.warn('background', 'START_CAPTURE failed (content script not ready yet)', { originalError: err });
   }
 
   // Notify panel
@@ -339,10 +339,9 @@ async function toggleRecording(): Promise<void> {
 // ── Step Capture Flow ───────────────────────────────────────────────────────
 
 async function handleStepCaptured(event: CapturedEvent, tabId: number): Promise<void> {
-  console.log('[SOP Recorder] STEP_CAPTURED received:', event.type, 'from tab', tabId, 'state:', stateMachine.getState(), 'activeTab:', activeTabId);
+  Logger.warn('background', 'STEP_CAPTURED received', { type: event.type, tabId, state: stateMachine.getState(), activeTabId });
   if (stateMachine.getState() !== 'recording') return;
   if (tabId !== activeTabId) return;
-  console.log('[SOP Recorder] Processing step:', event.type, event.accessibleName);
 
   // 1. Tell content script to show overlay (for click events)
   if (event.type === 'click' || event.type === 'dblclick') {
@@ -398,16 +397,14 @@ async function handleStepCaptured(event: CapturedEvent, tabId: number): Promise<
     activePanelPort?.postMessage({ type: 'SCREENSHOT_UNAVAILABLE', stepId: step.id });
   }
 
-  // 11. Check quota after storing screenshot blob
-  if (screenshotBlobKey) {
-    try {
-      const postQuota = await quotaManager.checkQuota();
-      if (postQuota.isWarning) {
-        activePanelPort?.postMessage({ type: 'QUOTA_WARNING', percentUsed: postQuota.percentUsed });
-      }
-    } catch (err) {
-      Logger.error('background', 'Quota check after step failed', { originalError: err });
+  // 11. Check quota after storing step (ensures consistent state before next operation)
+  try {
+    const postQuota = await quotaManager.checkQuota();
+    if (postQuota.isWarning) {
+      activePanelPort?.postMessage({ type: 'QUOTA_WARNING', percentUsed: postQuota.percentUsed });
     }
+  } catch (err) {
+    Logger.error('background', 'Quota check after step failed', { originalError: err });
   }
 }
 

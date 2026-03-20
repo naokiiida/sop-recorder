@@ -6,17 +6,17 @@ const RESTRICTED_URL_PATTERNS = [
   /^chrome-extension:\/\//,
   /^edge:\/\//,
   /^about:/,
-  /^chrome\.google\.com\/webstore/,
+  /^https?:\/\/chrome\.google\.com\/webstore/,
   /^devtools:\/\//,
 ];
 
 /**
  * Check if a URL is restricted (cannot inject content scripts).
+ * Handles undefined/null/empty URLs gracefully (treated as restricted).
  */
-export function isRestrictedUrl(url: string): boolean {
-  // Strip protocol for pattern matching
-  const withoutProtocol = url.replace(/^https?:\/\//, '');
-  return RESTRICTED_URL_PATTERNS.some((pattern) => pattern.test(url) || pattern.test(withoutProtocol));
+export function isRestrictedUrl(url: string | undefined | null): boolean {
+  if (!url) return true;
+  return RESTRICTED_URL_PATTERNS.some((pattern) => pattern.test(url));
 }
 
 /**

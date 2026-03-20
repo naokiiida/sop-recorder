@@ -301,7 +301,7 @@ export class SopEditor extends LitElement {
   private handleExport() {
     this.exportRetryCount++;
 
-    if (this.exportRetryCount > 2) {
+    if (this.exportRetryCount > 1) {
       // Second failure — fallback to Markdown-only export
       this.handleMarkdownFallbackExport();
       return;
@@ -326,7 +326,8 @@ export class SopEditor extends LitElement {
       console.warn('[SOP Recorder] Export fallback: copied Markdown to clipboard (ZIP export failed)');
     } catch (err) {
       console.error('[SOP Recorder] Markdown fallback export also failed:', err);
-      this.exportError = 'Export failed. Please try again later.';
+      this.exportError = 'All export methods failed. Try reloading the extension.';
+      this.exportRetryCount = 0;
       announce('Export failed', 'assertive');
     }
   }

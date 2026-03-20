@@ -2,6 +2,7 @@ import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { RecordingController } from './recording-controller.js';
 import { icon, ArrowLeft } from './icons.js';
+import { Logger } from '../core/logger.js';
 import './sop-home.js';
 import './sop-recording.js';
 import './sop-editor.js';
@@ -31,6 +32,16 @@ export class SopApp extends LitElement {
   @state() private renderError: string | null = null;
   private lightboxTrigger: HTMLElement | null = null;
   private previousView: string | null = null;
+  private reconnectDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  @state() private showReconnecting = false;
+
+  constructor() {
+    super();
+    this.addEventListener('error', (e: Event) => {
+      Logger.error('sop-app', 'Render error caught by boundary', { event: String(e) });
+      this.renderError = 'A rendering error occurred.';
+    });
+  }
 
   override createRenderRoot() {
     return this;
@@ -51,7 +62,7 @@ export class SopApp extends LitElement {
           ? html`<button class="sop-back-button" style="margin-bottom:var(--sop-gap-card);" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>`
           : nothing}
 
-        ${this.ctrl.reconnecting
+        ${this.showReconnecting
           ? html`<p role="status" style="color:var(--pico-muted-color);font-size:0.85rem;margin:0 0 8px;">Reconnecting...</p>`
           : nothing}
 
@@ -75,11 +86,22 @@ export class SopApp extends LitElement {
 
   override updated(changedProperties: Map<string, unknown>): void {
     super.updated(changedProperties);
-    // Catch unhandled errors from child components
-    this.addEventListener('error', (e: Event) => {
-      console.error('[SOP Recorder] Render error caught by boundary:', e);
-      this.renderError = 'A rendering error occurred.';
-    }, { once: true });
+
+    // Debounce reconnecting indicator to prevent flickering
+    if (this.ctrl.reconnecting && !this.showReconnecting) {
+      if (!this.reconnectDebounceTimer) {
+        this.reconnectDebounceTimer = setTimeout(() => {
+          this.showReconnecting = true;
+          this.reconnectDebounceTimer = null;
+        }, 500);
+      }
+    } else if (!this.ctrl.reconnecting && this.showReconnecting) {
+      if (this.reconnectDebounceTimer) {
+        clearTimeout(this.reconnectDebounceTimer);
+        this.reconnectDebounceTimer = null;
+      }
+      this.showReconnecting = false;
+    }
 
     // Focus management after view transitions
     const currentView = this.ctrl.viewState;
@@ -108,10 +130,21 @@ export class SopApp extends LitElement {
   }
 
   private renderView() {
+    try {
+      return this.renderViewInner();
+    } catch (err) {
+      Logger.error('sop-app', 'Synchronous render exception', { error: String(err) });
+      this.renderError = 'A rendering error occurred.';
+      return nothing;
+    }
+  }
+
+  private renderViewInner() {
     switch (this.ctrl.viewState) {
       case 'home':
         return html`<sop-home
           .recordings=${this.ctrl.recordings}
+          .storagePercentUsed=${this.ctrl.storagePercentUsed}
           @start-recording=${this.handleStartRecording}
           @load-recording=${this.handleLoadRecording}
           @delete-recording=${this.handleDeleteRecording}
@@ -174,7 +207,7 @@ export class SopApp extends LitElement {
     if (this.ctrl.loadedRecording) {
       this.ctrl.exportRecording(this.ctrl.loadedRecording.id);
     } else {
-      console.warn('[SOP Recorder] Export skipped: no loaded recording');
+      Logger.warn('sop-app', 'Export skipped: no loaded recording');
     }
   }
 

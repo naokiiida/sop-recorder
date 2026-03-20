@@ -209,16 +209,15 @@ function sendEvent(event: CapturedEvent): void {
 }
 
 function flushBuffer(): void {
-  while (eventBuffer.length > 0) {
-    const buffered = eventBuffer.shift();
-    if (!buffered) break;
+  if (eventBuffer.length === 0) return;
+  const pending = [...eventBuffer];
+  eventBuffer.length = 0;
+
+  for (const buffered of pending) {
     browser.runtime.sendMessage({ type: 'STEP_CAPTURED', payload: buffered }).catch((err: unknown) => {
-      // Re-buffer if still failing
       console.warn('[SOP Recorder] Buffer flush failed, re-queuing:', err);
-      eventBuffer.unshift(buffered);
+      eventBuffer.push(buffered);
     });
-    // Stop flushing if we can't send — avoid tight loop
-    break;
   }
 }
 

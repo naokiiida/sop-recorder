@@ -9,6 +9,7 @@ import type {
   RecordingState,
   ViewState,
 } from '../core/types.js';
+import { Logger } from '../core/logger.js';
 
 /**
  * Lit ReactiveController that maintains a port connection to the background
@@ -41,6 +42,11 @@ export class RecordingController implements ReactiveController {
   /** Whether we're reconnecting to the background */
   reconnecting = false;
 
+  /** Storage usage ratio (0–1) from last QUOTA_WARNING */
+  storagePercentUsed = 0;
+
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(host: ReactiveControllerHost) {
     this.host = host;
     host.addController(this);
@@ -66,7 +72,7 @@ export class RecordingController implements ReactiveController {
         try {
           this.handleMessage(msg);
         } catch (err) {
-          console.error('[SOP Recorder] Error handling message:', err);
+          Logger.error('recording-controller', 'Error handling message', { originalError: err });
         }
       });
 
@@ -74,23 +80,31 @@ export class RecordingController implements ReactiveController {
         this.port = null;
         this.reconnecting = true;
         this.host.requestUpdate();
-        // Attempt reconnect after a short delay
-        setTimeout(() => {
+        // Clear any existing reconnect timer before scheduling a new one
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+        }
+        this.reconnectTimer = setTimeout(() => {
+          this.reconnectTimer = null;
           if (!this.port) this.connect();
         }, 1000);
       });
 
-      // Clear reconnecting state
+      // Clear reconnecting state on successful connection
       if (this.reconnecting) {
         this.reconnecting = false;
         this.host.requestUpdate();
+      }
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
       }
 
       // Request initial state (also serves as full state sync after reconnect)
       this.send({ type: 'GET_STATE' });
       this.send({ type: 'LIST_RECORDINGS' });
     } catch (err) {
-      console.error('[SOP Recorder] Port connection failed:', err);
+      Logger.error('recording-controller', 'Port connection failed', { originalError: err });
     }
   }
 
@@ -142,16 +156,25 @@ export class RecordingController implements ReactiveController {
         this.viewState = 'edit';
         break;
 
-      case 'SCREENSHOT_UNAVAILABLE':
-        // Transient warning — step was recorded but screenshot failed
-        this.error = 'Screenshot unavailable for this step';
-        setTimeout(() => {
-          this.error = null;
-          this.host.requestUpdate();
-        }, 3000);
+      case 'SCREENSHOT_UNAVAILABLE': {
+        // Transient warning — but don't overwrite critical persistent errors
+        const critical = this.error === 'Storage full — export or delete old recordings to continue.'
+          || this.error === 'Cannot record on this page'
+          || this.error?.startsWith('Storage is ');
+        if (!critical) {
+          this.error = 'Screenshot unavailable for this step';
+          setTimeout(() => {
+            if (this.error === 'Screenshot unavailable for this step') {
+              this.error = null;
+              this.host.requestUpdate();
+            }
+          }, 3000);
+        }
         break;
+      }
 
       case 'QUOTA_WARNING':
+        this.storagePercentUsed = msg.percentUsed;
         this.error = `Storage is ${Math.round(msg.percentUsed * 100)}% full. Export or delete old recordings to free space.`;
         // Persistent — no auto-clear for quota warnings
         break;

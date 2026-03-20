@@ -34,4 +34,15 @@ describe('isRestrictedUrl', () => {
     expect(isRestrictedUrl('http://localhost:3000')).toBe(false);
     expect(isRestrictedUrl('https://docs.google.com/document/d/123')).toBe(false);
   });
+
+  it('allows URLs containing restricted-looking substrings in paths', () => {
+    expect(isRestrictedUrl('https://some-site.com/chrome-extension/')).toBe(false);
+    expect(isRestrictedUrl('https://example.com/about:config')).toBe(false);
+  });
+
+  it('treats null/undefined/empty URLs as restricted', () => {
+    expect(isRestrictedUrl(null)).toBe(true);
+    expect(isRestrictedUrl(undefined)).toBe(true);
+    expect(isRestrictedUrl('')).toBe(true);
+  });
 });
