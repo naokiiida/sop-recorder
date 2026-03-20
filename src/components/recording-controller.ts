@@ -66,6 +66,7 @@ export class RecordingController implements ReactiveController {
 
   private connect(): void {
     try {
+      console.log('[Controller] Attempting to connect to background...');
       this.port = browser.runtime.connect({ name: 'sidepanel' });
 
       this.port.onMessage.addListener((msg: BackgroundToPanelMessage) => {
@@ -77,6 +78,7 @@ export class RecordingController implements ReactiveController {
       });
 
       this.port.onDisconnect.addListener(() => {
+        console.warn('[Controller] Port disconnected');
         this.port = null;
         this.reconnecting = true;
         this.host.requestUpdate();
@@ -92,6 +94,7 @@ export class RecordingController implements ReactiveController {
 
       // Clear reconnecting state on successful connection
       if (this.reconnecting) {
+        console.log('[Controller] Reconnected successfully');
         this.reconnecting = false;
         this.host.requestUpdate();
       }
@@ -100,10 +103,12 @@ export class RecordingController implements ReactiveController {
         this.reconnectTimer = null;
       }
 
+      console.log('[Controller] Connected. Requesting initial state.');
       // Request initial state (also serves as full state sync after reconnect)
       this.send({ type: 'GET_STATE' });
       this.send({ type: 'LIST_RECORDINGS' });
     } catch (err) {
+      console.error('[Controller] Connection failed', err);
       Logger.error('recording-controller', 'Port connection failed', { originalError: err });
     }
   }
@@ -267,6 +272,14 @@ export class RecordingController implements ReactiveController {
 
   listRecordings(): void {
     this.send({ type: 'LIST_RECORDINGS' });
+  }
+
+  deleteAndNavigateHome(recordingId: string): void {
+    this.deleteRecording(recordingId);
+    this.loadedRecording = null;
+    this.steps = [];
+    this.navigateTo('home');
+    this.listRecordings();
   }
 
   exportRecording(recordingId: string, format: ExportFormat = 'markdown-zip'): void {

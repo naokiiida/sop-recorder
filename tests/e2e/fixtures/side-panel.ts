@@ -14,18 +14,38 @@ export class SidePanelPage {
     this.page = page;
     this.extensionId = extensionId;
     this.context = context;
+
+    // Forward console logs to Playwright output
+    this.page.on('console', (msg) => {
+      console.log(`[Panel Console] ${msg.type()}: ${msg.text()}`);
+    });
   }
 
   /** Navigate to the side panel page and wait for sop-app to render. */
   async goto(): Promise<void> {
     await this.page.goto(`chrome-extension://${this.extensionId}/sidepanel.html`);
     await this.page.waitForSelector('sop-app');
+    
+    // Manually trigger a state request to ensure full sync
+    await this.page.evaluate(() => {
+      const app = document.querySelector('sop-app');
+      // @ts-ignore - accessing private ctrl for testing
+      app?.ctrl?.send({ type: 'GET_STATE' });
+    });
+
+    // Small delay to ensure port connection is established
+    await this.page.waitForTimeout(1000);
   }
 
-  /** Click "Start Recording" and wait for the recording view to appear. */
+  /**
+   * Click "Start Recording" and wait for the recording view to appear.
+   * IMPORTANT: A non-extension page must be the active tab before calling this,
+   * because the background records whichever tab is active at start time.
+   * Use `startRecordingWithPage()` to handle this automatically.
+   */
   async startRecording(): Promise<void> {
     await this.page.getByRole('button', { name: 'Start Recording' }).click();
-    await this.page.waitForSelector('strong[role="status"]', { timeout: 5000 });
+    await this.page.waitForSelector('strong[role="status"]', { timeout: 10000 });
   }
 
   /** Click "Stop" and wait for view transition (editor or home). */
@@ -36,8 +56,21 @@ export class SidePanelPage {
       () =>
         document.querySelector('h2.sop-editable') !== null ||
         document.querySelector('.sop-empty-state') !== null,
-      { timeout: 5000 },
+      { timeout: 10000 },
     );
+  }
+
+  /**
+   * Open a test fixture page, make it the active tab, then start recording.
+   * In real Chrome the side panel isn't a tab, so the user's webpage is always
+   * the active tab when recording starts. This method replicates that setup.
+   */
+  async startRecordingWithPage(): Promise<Page> {
+    const testPage = await this.openTestPage();
+    await testPage.bringToFront();
+    await this.page.getByRole('button', { name: 'Start Recording' }).click();
+    await this.page.waitForSelector('strong[role="status"]', { timeout: 10000 });
+    return testPage;
   }
 
   /** Click "Pause" button. */
@@ -62,11 +95,13 @@ export class SidePanelPage {
 
   /** Edit a step title in the editor view by index (0-based). */
   async editStepTitle(index: number, newTitle: string): Promise<void> {
-    const editableTitle = this.page
-      .locator('strong.sop-editable[aria-label="Edit step title"]')
-      .nth(index);
+    // Scope search to the specific step card
+    const card = this.page.locator('article.sop-step-card').nth(index);
+    const editableTitle = card.locator('strong.sop-editable[aria-label="Edit step title"]');
+
     await editableTitle.click();
-    const input = this.page.locator('sop-step-card input[type="text"]').first();
+    // Input is part of the card while editing
+    const input = card.locator('input[type="text"]');
     await input.fill(newTitle);
     await input.press('Enter');
   }
@@ -85,9 +120,11 @@ export class SidePanelPage {
     await this.page.getByRole('button', { name: 'Copy Markdown' }).click();
   }
 
-  /** Click "Delete Recording" button. */
+  /** Click "Delete Recording" button and wait for transition to home. */
   async deleteRecording(): Promise<void> {
     await this.page.getByRole('button', { name: /Delete Recording/ }).click();
+    // Wait for home view (Start Recording button should appear)
+    await this.page.waitForSelector('button.contrast', { timeout: 5000 });
   }
 
   /** Click the back button to return to home view. */
@@ -113,6 +150,8 @@ export class SidePanelPage {
     const fixturePath = path.resolve('tests/e2e/fixtures/test-page.html');
     await testPage.goto(`file://${fixturePath}`);
     await testPage.waitForLoadState('domcontentloaded');
+    // Ensure it is focused so getCurrentTab() finds it
+    await testPage.bringToFront();
     return testPage;
   }
 

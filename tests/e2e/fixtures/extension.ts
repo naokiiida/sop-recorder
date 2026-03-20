@@ -10,7 +10,8 @@ export const test = base.extend<{
   // eslint-disable-next-line no-empty-pattern
   context: async ({}, use) => {
     const context = await chromium.launchPersistentContext('', {
-      headless: false,
+      headless: true,
+      channel: 'chromium', // Use full chromium to support extensions in headless mode
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,

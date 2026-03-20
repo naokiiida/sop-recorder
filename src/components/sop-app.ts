@@ -26,9 +26,10 @@ export function announce(message: string, priority: 'polite' | 'assertive' = 'po
  */
 @customElement('sop-app')
 export class SopApp extends LitElement {
-  private ctrl = new RecordingController(this);
+  public ctrl = new RecordingController(this);
 
-  @state() private lightboxBlobKey: string | null = null;
+  @state() private error: string | null = null;
+
   @state() private renderError: string | null = null;
   private lightboxTrigger: HTMLElement | null = null;
   private previousView: string | null = null;
@@ -193,10 +194,15 @@ export class SopApp extends LitElement {
   }
 
   private handleDeleteFromEditor(e: CustomEvent<{ recordingId: string }>) {
-    this.ctrl.deleteRecording(e.detail.recordingId);
-    this.ctrl.loadedRecording = null;
-    this.ctrl.navigateTo('home');
-    this.ctrl.listRecordings();
+    const transition = () => {
+      this.ctrl.deleteAndNavigateHome(e.detail.recordingId);
+    };
+
+    if (document.startViewTransition) {
+      document.startViewTransition(transition);
+    } else {
+      transition();
+    }
   }
 
   private handleDeleteStep(e: CustomEvent<{ stepId: string }>) {

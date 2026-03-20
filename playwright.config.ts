@@ -9,11 +9,12 @@ export default defineConfig({
   // Retry on CI only.
   retries: process.env.CI ? 2 : 0,
 
-  // Opt out of parallel tests on CI.
-  ...(process.env.CI ? { workers: 1 } : {}),
+  // Opt out of parallel tests as the extension background script is a singleton
+  // and only tracks one active panel port at a time.
+  workers: 1,
 
   // Reporter to use.
-  reporter: 'html',
+  reporter: 'list',
 
   use: {
     // Collect trace when retrying the failed test.

@@ -9,31 +9,30 @@ test('saved recordings appear in home view after completing a recording', async 
   const panel = new SidePanelPage(page, extensionId, context);
   await panel.goto();
 
-  // 1. Complete a recording: start, perform an action, stop
-  await panel.startRecording();
-
-  const testPage = await panel.openTestPage();
-  await testPage.waitForTimeout(1500);
+  // 1. Complete a recording: start (with test page as active tab), perform an action, stop
+  const testPage = await panel.startRecordingWithPage();
   await testPage.locator('[data-testid="btn-save"]').click();
-  await testPage.waitForTimeout(1000);
+  await panel.waitForStepCount(1);
 
   await page.bringToFront();
-  await panel.waitForStepCount(1, 10000);
   await panel.stopRecording();
 
   // Should be in editor view now
-  await expect(page.locator('h2.sop-editable')).toBeVisible();
+  const titleHeader = page.locator('h2.sop-editable');
+  await expect(titleHeader).toBeVisible();
+  const expectedTitle = (await titleHeader.textContent()) ?? 'Untitled SOP';
 
   // 2. Navigate back to home
   await panel.goBack();
 
-  // 3. Verify at least one recording card appears
+  // 3. Verify the recording card appears with correct info (AC #3)
   const recordingCards = panel.getRecordingCards();
-  await expect(recordingCards.first()).toBeVisible({ timeout: 5000 });
-  const cardCount = await recordingCards.count();
-  expect(cardCount).toBeGreaterThanOrEqual(1);
-
-  // 4. Verify the card shows step count info
   const firstCard = recordingCards.first();
+  await expect(firstCard).toBeVisible({ timeout: 5000 });
+  
+  // Verify title (rendered as <strong> in the card, not <h3>)
+  await expect(firstCard.locator('strong.sop-truncate')).toContainText(expectedTitle);
+  
+  // Verify step count info
   await expect(firstCard).toContainText(/\d+ steps?/);
 });

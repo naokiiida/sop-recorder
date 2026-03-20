@@ -420,6 +420,9 @@ export class SopEditor extends LitElement {
   private handleDeleteRecording() {
     const recordingId = this.recording?.id;
     if (!recordingId) return;
+
+    if (!window.confirm('Are you sure you want to delete this recording?')) return;
+
     this.dispatchEvent(
       new CustomEvent('delete-recording', {
         detail: { recordingId },
