@@ -150,8 +150,11 @@ describe('generateMarkdown', () => {
     expect(md).toContain('![Step 1](screenshots/step-01.jpg)');
     expect(md).toContain('![Step 10](screenshots/step-10.jpg)');
     expect(md).toContain('![Step 50](screenshots/step-50.jpg)');
-    // Ensure NO unpadded references like step-5.jpg
+    // Ensure NO unpadded references for any single-digit step
     expect(md).not.toMatch(/screenshots\/step-5\.jpg/);
+    expect(md).not.toMatch(/screenshots\/step-3\.jpg/);
+    // Verify a mid-range single-digit step IS zero-padded
+    expect(md).toContain('![Step 3](screenshots/step-03.jpg)');
   });
 
   it('includes Starting URL field even when startUrl is empty', () => {

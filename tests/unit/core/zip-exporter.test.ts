@@ -145,6 +145,13 @@ describe('exportAsZip', () => {
     const zip = await JSZip.loadAsync(blob);
 
     const mdContent = await zip.file('sop.md')!.async('string');
+    // P3: Only the empty-key step produces the unavailable marker in markdown.
+    // The 'key-missing' step has a truthy screenshotBlobKey, so export-engine
+    // emits an image reference (broken link in ZIP, but not "unavailable").
     expect(mdContent).toContain('*(Screenshot unavailable)*');
+    expect(mdContent).toContain('![Step 2]'); // non-empty key gets image ref
+    // P5: fetchBlob should only be called for the non-empty key (empty-key step skips fetch)
+    expect(fetchBlob).toHaveBeenCalledTimes(1);
+    expect(fetchBlob).toHaveBeenCalledWith('key-missing');
   });
 });
