@@ -45,7 +45,9 @@ export class SopEditor extends LitElement {
             ? html`<input
                 type="text"
                 .value=${this.editTitleValue}
-                @input=${(e: Event) => { this.editTitleValue = (e.target as HTMLInputElement).value; }}
+                @input=${(e: Event) => {
+                  this.editTitleValue = (e.target as HTMLInputElement).value;
+                }}
                 @keydown=${(e: KeyboardEvent) => {
                   if (e.key === 'Enter') this.saveTitle();
                   if (e.key === 'Escape') this.cancelTitleEdit();
@@ -60,9 +62,12 @@ export class SopEditor extends LitElement {
                 aria-label="Edit recording title"
                 @click=${this.startTitleEdit}
                 @keydown=${this.handleTitleKeydown}
-              >${title}</h2>`}
+              >
+                ${title}
+              </h2>`}
           <small class="sop-muted">
-            ${stepCount} step${stepCount !== 1 ? 's' : ''}${createdDate ? ` \u00B7 ${createdDate}` : ''}
+            ${stepCount}
+            step${stepCount !== 1 ? 's' : ''}${createdDate ? ` \u00B7 ${createdDate}` : ''}
           </small>
         </header>
 
@@ -94,32 +99,53 @@ export class SopEditor extends LitElement {
         ${stepCount === 0
           ? html`<p class="sop-muted sop-empty-state">No steps recorded.</p>`
           : nothing}
-
         ${stepCount > 0
-          ? html`
-            ${this.exportError
-              ? html`<p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;margin:var(--sop-gap-section) 0 8px;">${this.exportError}</p>`
-              : nothing}
-            <button class="contrast" style="width:100%;margin-top:${this.exportError ? '0' : 'var(--sop-gap-section)'};" @click=${this.handleExport}>
-              ${this.exportError ? 'Retry Export' : 'Export as ZIP'}
-            </button>
-            <button class="outline" style="width:100%;margin-top:var(--sop-gap-card);" @click=${this.handleCopyMarkdown}>
-              ${this.copyFeedback ? 'Copied!' : 'Copy Markdown'}
-            </button>`
+          ? html` ${this.exportError
+                ? html`<p
+                    role="alert"
+                    style="color:var(--sop-danger-color);font-size:0.85rem;margin:var(--sop-gap-section) 0 8px;"
+                  >
+                    ${this.exportError}
+                  </p>`
+                : nothing}
+              <button
+                class="contrast"
+                style="width:100%;margin-top:${this.exportError ? '0' : 'var(--sop-gap-section)'};"
+                @click=${this.handleExport}
+              >
+                ${this.exportError ? 'Retry Export' : 'Export as ZIP'}
+              </button>
+              <button
+                class="outline"
+                style="width:100%;margin-top:var(--sop-gap-card);"
+                @click=${this.handleCopyMarkdown}
+              >
+                ${this.copyFeedback ? 'Copied!' : 'Copy Markdown'}
+              </button>`
           : nothing}
 
-        <button class="sop-btn-danger" style="width:100%;margin-top:var(--sop-gap-card);" @click=${this.handleDeleteRecording}>
+        <button
+          class="sop-btn-danger"
+          style="width:100%;margin-top:var(--sop-gap-card);"
+          @click=${this.handleDeleteRecording}
+        >
           ${icon(Trash2, 14)} Delete Recording
         </button>
 
         <!-- Undo toast (🗑 consistent delete feedback) -->
         ${this.undoStep
           ? html`
-            <aside class="sop-undo-toast" role="status" aria-live="polite" aria-atomic="true">
-              <span>${icon(Trash2, 14)} Step deleted</span>
-              <button class="secondary outline" style="padding:4px 10px;font-size:0.8rem;" @click=${this.handleUndo}>Undo</button>
-            </aside>
-          `
+              <aside class="sop-undo-toast" role="status" aria-live="polite" aria-atomic="true">
+                <span>${icon(Trash2, 14)} Step deleted</span>
+                <button
+                  class="secondary outline"
+                  style="padding:4px 10px;font-size:0.8rem;"
+                  @click=${this.handleUndo}
+                >
+                  Undo
+                </button>
+              </aside>
+            `
           : nothing}
       </section>
     `;
@@ -152,10 +178,19 @@ export class SopEditor extends LitElement {
       this.recording = { ...this.recording, title: newTitle };
       this.dispatchEvent(new CustomEvent('save-recording', { bubbles: true, composed: true }));
     }
+    this.focusEditableTitle();
   }
 
   private cancelTitleEdit() {
     this.editingTitle = false;
+    this.focusEditableTitle();
+  }
+
+  private focusEditableTitle() {
+    requestAnimationFrame(() => {
+      const el = this.querySelector('h2.sop-editable') as HTMLElement | null;
+      el?.focus();
+    });
   }
 
   // ── Step actions (🗑 delete with undo toast) ───────────────────────────
@@ -187,6 +222,10 @@ export class SopEditor extends LitElement {
       if (card) {
         const article = card.querySelector('article');
         (article as HTMLElement)?.focus();
+      } else {
+        // All steps deleted — focus the delete recording button as fallback
+        const fallback = this.querySelector('button.sop-btn-danger') as HTMLElement | null;
+        fallback?.focus();
       }
     });
   }
@@ -267,7 +306,9 @@ export class SopEditor extends LitElement {
 
   private handleDrop(e: DragEvent) {
     e.preventDefault();
-    (e.currentTarget as HTMLElement).querySelectorAll('.sop-drop-indicator').forEach((el) => el.remove());
+    (e.currentTarget as HTMLElement)
+      .querySelectorAll('.sop-drop-indicator')
+      .forEach((el) => el.remove());
 
     const draggedId = e.dataTransfer?.getData('text/plain');
     if (!draggedId) return;
@@ -321,9 +362,13 @@ export class SopEditor extends LitElement {
       this.exportError = null;
       this.exportRetryCount = 0;
       this.copyFeedback = true;
-      setTimeout(() => { this.copyFeedback = false; }, 2000);
+      setTimeout(() => {
+        this.copyFeedback = false;
+      }, 2000);
       announce('Markdown copied to clipboard (ZIP export failed)');
-      console.warn('[SOP Recorder] Export fallback: copied Markdown to clipboard (ZIP export failed)');
+      console.warn(
+        '[SOP Recorder] Export fallback: copied Markdown to clipboard (ZIP export failed)',
+      );
     } catch (err) {
       console.error('[SOP Recorder] Markdown fallback export also failed:', err);
       this.exportError = 'All export methods failed. Try reloading the extension.';
@@ -376,7 +421,11 @@ export class SopEditor extends LitElement {
     const recordingId = this.recording?.id;
     if (!recordingId) return;
     this.dispatchEvent(
-      new CustomEvent('delete-recording', { detail: { recordingId }, bubbles: true, composed: true }),
+      new CustomEvent('delete-recording', {
+        detail: { recordingId },
+        bubbles: true,
+        composed: true,
+      }),
     );
   }
 }

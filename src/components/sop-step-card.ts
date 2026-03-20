@@ -49,12 +49,12 @@ export class SopStepCard extends LitElement {
                 class="sop-thumbnail sop-thumbnail--live"
                 loading="lazy"
               />`
-            : html`<div class="sop-thumbnail sop-thumbnail--live sop-screenshot-unavailable">${icon(ImageOff, 16)}<span>Screenshot unavailable</span></div>`}
+            : html`<div class="sop-thumbnail sop-thumbnail--live sop-screenshot-unavailable">
+                ${icon(ImageOff, 16)}<span>Screenshot unavailable</span>
+              </div>`}
         </figure>
         <div style="min-width:0;display:flex;flex-direction:column;gap:4px;">
-          <div class="sop-flex" style="min-width:0;flex:1;gap:6px;">
-            ${this.renderTitle()}
-          </div>
+          <div class="sop-flex" style="min-width:0;flex:1;gap:6px;">${this.renderTitle()}</div>
         </div>
       </article>
     `;
@@ -62,7 +62,9 @@ export class SopStepCard extends LitElement {
 
   private renderEditMode() {
     return html`
-      <article class="sop-step-card sop-step-card--vertical"
+      <article
+        class="sop-step-card sop-step-card--vertical"
+        tabindex="0"
         draggable="true"
         @dragstart=${this.handleDragStart}
         @dragend=${this.handleDragEnd}
@@ -80,19 +82,43 @@ export class SopStepCard extends LitElement {
                 loading="lazy"
                 @click=${this.handleThumbnailClick}
               />`
-            : html`<div class="sop-thumbnail-placeholder sop-screenshot-unavailable">${icon(ImageOff, 20)}<span>Screenshot unavailable</span></div>`}
+            : html`<div class="sop-thumbnail-placeholder sop-screenshot-unavailable">
+                ${icon(ImageOff, 20)}<span>Screenshot unavailable</span>
+              </div>`}
           <span class="sop-step-badge">${this.step.sequenceNumber}</span>
           <div class="sop-hover-actions">
-            <button @click=${this.handleMoveUp} ?disabled=${this.isFirst} aria-label="Move step ${this.step.sequenceNumber} up">${icon(ChevronUp, 14)}</button>
-            <button @click=${this.handleMoveDown} ?disabled=${this.isLast} aria-label="Move step ${this.step.sequenceNumber} down">${icon(ChevronDown, 14)}</button>
-            <button class="sop-danger" @click=${this.handleDelete} aria-label="Delete step ${this.step.sequenceNumber}">${icon(Trash2, 14)}</button>
+            <button
+              @click=${this.handleMoveUp}
+              ?disabled=${this.isFirst}
+              aria-label="Move step ${this.step.sequenceNumber} up"
+            >
+              ${icon(ChevronUp, 14)}
+            </button>
+            <button
+              @click=${this.handleMoveDown}
+              ?disabled=${this.isLast}
+              aria-label="Move step ${this.step.sequenceNumber} down"
+            >
+              ${icon(ChevronDown, 14)}
+            </button>
+            <button
+              class="sop-danger"
+              @click=${this.handleDelete}
+              aria-label="Delete step ${this.step.sequenceNumber}"
+            >
+              ${icon(Trash2, 14)}
+            </button>
           </div>
         </div>
 
         <!-- Content below thumbnail -->
         <div class="sop-step-content">
           ${this.renderTitle()}
-          <small class="sop-muted sop-truncate" style="font-size:0.8rem;color:var(--pico-muted-color);" title=${this.step.pageUrl}>
+          <small
+            class="sop-muted sop-truncate"
+            style="font-size:0.8rem;color:var(--pico-muted-color);"
+            title=${this.step.pageUrl}
+          >
             ${this.truncateUrl(this.step.pageUrl)}
           </small>
           ${this.renderDescription()}
@@ -109,7 +135,9 @@ export class SopStepCard extends LitElement {
         <input
           type="text"
           .value=${this.editTitleValue}
-          @input=${(e: Event) => { this.editTitleValue = (e.target as HTMLInputElement).value; }}
+          @input=${(e: Event) => {
+            this.editTitleValue = (e.target as HTMLInputElement).value;
+          }}
           @keydown=${(e: KeyboardEvent) => {
             if (e.key === 'Enter') this.saveTitle();
             if (e.key === 'Escape') this.cancelTitleEdit();
@@ -130,12 +158,15 @@ export class SopStepCard extends LitElement {
           aria-label="Edit step title"
           @click=${this.startTitleEdit}
           @keydown=${this.handleTitleKeydown}
-        >${this.step.title}</strong>
+          >${this.step.title}</strong
+        >
       `;
     }
 
     // Live mode: plain title
-    return html`<strong class="sop-truncate" style="flex:1;min-width:0;font-size:0.85rem;">${this.step.title}</strong>`;
+    return html`<strong class="sop-truncate" style="flex:1;min-width:0;font-size:0.85rem;"
+      >${this.step.title}</strong
+    >`;
   }
 
   private handleTitleKeydown(e: KeyboardEvent) {
@@ -163,7 +194,8 @@ export class SopStepCard extends LitElement {
       this.dispatchEvent(
         new CustomEvent('update-step', {
           detail: { stepId: this.step.id, changes: { title: newTitle } },
-          bubbles: true, composed: true,
+          bubbles: true,
+          composed: true,
         }),
       );
     }
@@ -189,8 +221,12 @@ export class SopStepCard extends LitElement {
       return html`
         <textarea
           .value=${this.editDescriptionValue}
-          @input=${(e: Event) => { this.editDescriptionValue = (e.target as HTMLTextAreaElement).value; }}
-          @keydown=${(e: KeyboardEvent) => { if (e.key === 'Escape') this.cancelDescriptionEdit(); }}
+          @input=${(e: Event) => {
+            this.editDescriptionValue = (e.target as HTMLTextAreaElement).value;
+          }}
+          @keydown=${(e: KeyboardEvent) => {
+            if (e.key === 'Escape') this.cancelDescriptionEdit();
+          }}
           @blur=${this.saveDescription}
           rows="2"
           placeholder="Add a description..."
@@ -209,7 +245,9 @@ export class SopStepCard extends LitElement {
         aria-label="Edit step description"
         @click=${this.startDescriptionEdit}
         @keydown=${this.handleDescriptionKeydown}
-      >${hasDesc ? this.step.description : '\u270E Add description'}</p>
+      >
+        ${hasDesc ? this.step.description : '\u270E Add description'}
+      </p>
     `;
   }
 
@@ -237,7 +275,8 @@ export class SopStepCard extends LitElement {
       this.dispatchEvent(
         new CustomEvent('update-step', {
           detail: { stepId: this.step.id, changes: { description: newDesc } },
-          bubbles: true, composed: true,
+          bubbles: true,
+          composed: true,
         }),
       );
     }
@@ -275,26 +314,42 @@ export class SopStepCard extends LitElement {
 
   private handleMoveUp() {
     this.dispatchEvent(
-      new CustomEvent('reorder-step', { detail: { stepId: this.step.id, direction: 'up' }, bubbles: true, composed: true }),
+      new CustomEvent('reorder-step', {
+        detail: { stepId: this.step.id, direction: 'up' },
+        bubbles: true,
+        composed: true,
+      }),
     );
   }
 
   private handleMoveDown() {
     this.dispatchEvent(
-      new CustomEvent('reorder-step', { detail: { stepId: this.step.id, direction: 'down' }, bubbles: true, composed: true }),
+      new CustomEvent('reorder-step', {
+        detail: { stepId: this.step.id, direction: 'down' },
+        bubbles: true,
+        composed: true,
+      }),
     );
   }
 
   private handleDelete() {
     this.dispatchEvent(
-      new CustomEvent('delete-step', { detail: { stepId: this.step.id }, bubbles: true, composed: true }),
+      new CustomEvent('delete-step', {
+        detail: { stepId: this.step.id },
+        bubbles: true,
+        composed: true,
+      }),
     );
   }
 
   private handleThumbnailClick() {
     if (this.step.screenshotBlobKey) {
       this.dispatchEvent(
-        new CustomEvent('show-lightbox', { detail: { blobKey: this.step.screenshotBlobKey }, bubbles: true, composed: true }),
+        new CustomEvent('show-lightbox', {
+          detail: { blobKey: this.step.screenshotBlobKey },
+          bubbles: true,
+          composed: true,
+        }),
       );
     }
   }

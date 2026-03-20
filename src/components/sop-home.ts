@@ -25,14 +25,22 @@ export class SopHome extends LitElement {
     return html`
       <section>
         ${this.storagePercentUsed >= 0.8
-          ? html`<p role="alert" class="sop-storage-banner" style="color:var(--sop-danger-color);background:color-mix(in srgb, var(--sop-danger-color) 10%, transparent);border:1px solid var(--sop-danger-color);border-radius:var(--sop-card-radius, 8px);padding:8px 12px;font-size:0.85rem;margin-bottom:var(--sop-gap-section);">
-              Storage is ${Math.round(this.storagePercentUsed * 100)}% full. Export or delete old recordings to free space.
+          ? html`<p
+              role="alert"
+              class="sop-storage-banner"
+              style="color:var(--sop-danger-color);background:color-mix(in srgb, var(--sop-danger-color) 10%, transparent);border:1px solid var(--sop-danger-color);border-radius:var(--sop-card-radius, 8px);padding:8px 12px;font-size:0.85rem;margin-bottom:var(--sop-gap-section);"
+            >
+              Storage is ${Math.round(this.storagePercentUsed * 100)}% full. Export or delete old
+              recordings to free space.
             </p>`
           : nothing}
-
         ${this.selecting ? this.renderBatchBar() : html``}
 
-        <button class="contrast" style="width:100%;margin-bottom:var(--sop-gap-section);" @click=${this.handleStart}>
+        <button
+          class="contrast"
+          style="width:100%;margin-bottom:var(--sop-gap-section);"
+          @click=${this.handleStart}
+        >
           Start Recording
         </button>
 
@@ -52,14 +60,25 @@ export class SopHome extends LitElement {
 
   private renderList() {
     const allIds = this.recordings.map((r) => (r as RecordingMetadata & { id?: string }).id ?? '');
-    const allSelected = this.selecting && allIds.length > 0 && allIds.every((id) => this.selected.has(id));
+    const allSelected =
+      this.selecting && allIds.length > 0 && allIds.every((id) => this.selected.has(id));
 
     return html`
       <div class="sop-flex-between" style="margin-bottom:0.5rem;">
         <h2 style="margin-bottom:0;">
-          Saved Recordings${this.selecting ? html` <span class="sop-muted" style="font-weight:400;">(${this.selected.size})</span>` : nothing}
+          Saved
+          Recordings${this.selecting
+            ? html` <span class="sop-muted" style="font-weight:400;">(${this.selected.size})</span>`
+            : nothing}
         </h2>
-        ${this.selecting ? html`<input type="checkbox" .checked=${allSelected} @change=${() => this.toggleSelectAll(allIds)} aria-label="Select all" />` : nothing}
+        ${this.selecting
+          ? html`<input
+              type="checkbox"
+              .checked=${allSelected}
+              @change=${() => this.toggleSelectAll(allIds)}
+              aria-label="Select all"
+            />`
+          : nothing}
       </div>
       <section class="sop-stack sop-stack--tight">
         ${this.recordings.map((rec) => this.renderCard(rec))}
@@ -75,10 +94,11 @@ export class SopHome extends LitElement {
     const stepLabel = `${meta.stepCount ?? 0} step${(meta.stepCount ?? 0) !== 1 ? 's' : ''}`;
 
     return html`
-      <article class="sop-rec-card ${this.selecting ? 'sop-rec-card--select' : ''}"
+      <article
+        class="sop-rec-card ${this.selecting ? 'sop-rec-card--select' : ''}"
         tabindex="0"
         role="button"
-        aria-label="${title}, ${stepLabel}"
+        aria-label="${this.selecting && isSelected ? 'Selected, ' : ''}${title}, ${stepLabel}"
         @click=${this.selecting ? () => this.toggleSelect(id) : () => this.handleLoad(id)}
         @keydown=${(e: KeyboardEvent) => this.handleCardKeydown(e, id)}
         @pointerdown=${this.selecting ? undefined : () => this.handlePointerDown(id)}
@@ -87,7 +107,14 @@ export class SopHome extends LitElement {
         @pointerleave=${this.selecting ? undefined : this.handlePointerUp}
       >
         <div class="sop-flex" style="gap:10px;min-width:0;">
-          ${this.selecting ? html`<input type="checkbox" .checked=${isSelected} />` : nothing}
+          ${this.selecting
+            ? html`<input
+                type="checkbox"
+                .checked=${isSelected}
+                tabindex="-1"
+                aria-hidden="true"
+              />`
+            : nothing}
           <div style="min-width:0;flex:1;overflow:hidden;">
             <strong class="sop-truncate" style="display:block;">${title}</strong>
             <small class="sop-muted">${stepLabel}</small>
@@ -102,12 +129,22 @@ export class SopHome extends LitElement {
   private renderBatchBar() {
     return html`
       <nav style="display:flex;gap:6px;align-items:center;margin-bottom:var(--sop-gap-section);">
-        <button class="outline secondary" style="white-space:nowrap;" @click=${this.cancelSelect}>Cancel</button>
+        <button class="outline secondary" style="white-space:nowrap;" @click=${this.cancelSelect}>
+          Cancel
+        </button>
         <span style="flex:1;"></span>
-        <button class="outline secondary sop-flex" style="white-space:nowrap;gap:4px;" @click=${this.batchExport}>
+        <button
+          class="outline secondary sop-flex"
+          style="white-space:nowrap;gap:4px;"
+          @click=${this.batchExport}
+        >
           ${icon(Download, 14)} Export
         </button>
-        <button class="sop-btn-danger sop-flex" style="white-space:nowrap;gap:4px;" @click=${this.batchDelete}>
+        <button
+          class="sop-btn-danger sop-flex"
+          style="white-space:nowrap;gap:4px;"
+          @click=${this.batchDelete}
+        >
           ${icon(Trash2, 14)} Delete
         </button>
       </nav>
@@ -179,7 +216,11 @@ export class SopHome extends LitElement {
   private batchDelete() {
     for (const id of this.selected) {
       this.dispatchEvent(
-        new CustomEvent('delete-recording', { detail: { recordingId: id }, bubbles: true, composed: true }),
+        new CustomEvent('delete-recording', {
+          detail: { recordingId: id },
+          bubbles: true,
+          composed: true,
+        }),
       );
     }
     this.cancelSelect();
@@ -188,7 +229,11 @@ export class SopHome extends LitElement {
   private batchExport() {
     for (const id of this.selected) {
       this.dispatchEvent(
-        new CustomEvent('export-recording', { detail: { recordingId: id }, bubbles: true, composed: true }),
+        new CustomEvent('export-recording', {
+          detail: { recordingId: id },
+          bubbles: true,
+          composed: true,
+        }),
       );
     }
     this.cancelSelect();
@@ -203,7 +248,11 @@ export class SopHome extends LitElement {
   private handleLoad(id: string) {
     if (!id) return;
     this.dispatchEvent(
-      new CustomEvent('load-recording', { detail: { recordingId: id }, bubbles: true, composed: true }),
+      new CustomEvent('load-recording', {
+        detail: { recordingId: id },
+        bubbles: true,
+        composed: true,
+      }),
     );
   }
 }

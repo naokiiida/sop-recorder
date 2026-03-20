@@ -30,13 +30,16 @@ export class SopRecording extends LitElement {
       } else if (this.recordingState === 'recording' && this.previousState === 'paused') {
         announce('Recording resumed', 'assertive');
       } else if (this.recordingState === 'idle') {
-        announce(`Recording stopped. ${this.steps.length} step${this.steps.length !== 1 ? 's' : ''} captured.`, 'assertive');
+        announce(
+          `Recording stopped. ${this.steps.length} step${this.steps.length !== 1 ? 's' : ''} captured.`,
+          'assertive',
+        );
       }
     }
     this.previousState = this.recordingState;
 
     // Announce new step captured
-    if (this.steps.length > this.previousStepCount && this.previousStepCount > 0) {
+    if (this.steps.length > this.previousStepCount && this.previousStepCount >= 0) {
       const latest = this.steps[this.steps.length - 1];
       if (latest) {
         announce(`Step ${latest.sequenceNumber} captured: ${latest.title}`);
@@ -54,7 +57,9 @@ export class SopRecording extends LitElement {
         <header class="sop-flex" style="margin-bottom:var(--sop-gap-section);">
           <span
             class="sop-recording-dot ${isPaused ? '' : 'sop-pulse'}"
-            style="background:${isPaused ? 'var(--sop-paused-color)' : 'var(--sop-recording-color)'};"
+            style="background:${isPaused
+              ? 'var(--sop-paused-color)'
+              : 'var(--sop-recording-color)'};"
             aria-hidden="true"
           ></span>
           <strong
@@ -73,12 +78,19 @@ export class SopRecording extends LitElement {
         <div class="sop-control-grid">
           ${isPaused
             ? html`<button class="secondary" @click=${this.handleResume}>&#9654; Resume</button>`
-            : html`<button class="secondary" @click=${this.handlePause}>&#10074;&#10074; Pause</button>`}
+            : html`<button class="secondary" @click=${this.handlePause}>
+                &#10074;&#10074; Pause
+              </button>`}
           <button class="sop-btn-danger" @click=${this.handleStop}>&#9632; Stop</button>
         </div>
 
         <!-- Live step feed (newest first) -->
-        <section class="sop-stack sop-stack--tight" role="log" aria-label="Captured steps" aria-live="polite">
+        <section
+          class="sop-stack sop-stack--tight"
+          role="log"
+          aria-label="Captured steps"
+          aria-live="polite"
+        >
           ${repeat(
             [...this.steps].reverse(),
             (step) => step.id,
