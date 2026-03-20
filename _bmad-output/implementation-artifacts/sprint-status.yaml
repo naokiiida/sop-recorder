@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-19
+last_updated: 2026-03-20
 project: sop-recorder
 project_key: NOKEY
 tracking_system: file-system
@@ -96,21 +96,22 @@ development_status:
   epic-6: done
   6-1-implement-markdown-generator: done
   6-2-implement-zip-export-with-jszip: done
-  6-3-implement-copy-markdown-to-clipboard: done
-  epic-6-retrospective: optional
+   6-3-implement-copy-markdown-to-clipboard: done
+   epic-6-retrospective: optional
 
-  # ── Epic 7: Polish & Quality ──
-  epic-7: in-progress
-  7-1-comprehensive-error-handling: review
-  7-2-implement-accessibility-compliance: review
-  7-3-implement-performance-optimization: review
-  7-4-write-core-module-unit-tests: review
-  7-5-write-e2e-tests-for-critical-path: backlog
-  epic-7-retrospective: optional
 
-  # ── Epic 8: Release Preparation ──
-  epic-8: backlog
-  8-1-create-extension-icons-and-cws-store-assets: backlog
-  8-2-create-readme-and-repository-setup: backlog
-  8-3-chrome-web-store-submission-validation: backlog
-  epic-8-retrospective: optional
+   # ── Epic 7: Polish & Quality ──
+   epic-7: in-progress
+   7-1-comprehensive-error-handling: done
+   7-2-implement-accessibility-compliance: done
+   7-3-implement-performance-optimization: done
+   7-4-write-core-module-unit-tests: done
+   7-5-write-e2e-tests-for-critical-path: in-progress
+   epic-7-retrospective: optional
+
+   # ── Epic 8: Release Preparation ──
+   epic-8: backlog
+   8-1-create-extension-icons-and-cws-store-assets: backlog
+   8-2-create-readme-and-repository-setup: backlog
+   8-3-chrome-web-store-submission-validation: backlog
+   epic-8-retrospective: optional
