@@ -12,3 +12,8 @@ playwright-report/
 test-results/
 coverage/
 .pnpm-store/
+
+# BMAD IDE skill directories (duplicates of .claude/skills/)
+.agent/
+.gemini/
+.opencode/
