@@ -101,12 +101,12 @@ development_status:
 
 
    # ── Epic 7: Polish & Quality ──
-   epic-7: in-progress
+   epic-7: done
    7-1-comprehensive-error-handling: done
    7-2-implement-accessibility-compliance: done
    7-3-implement-performance-optimization: done
    7-4-write-core-module-unit-tests: done
-   7-5-write-e2e-tests-for-critical-path: in-progress
+   7-5-write-e2e-tests-for-critical-path: done
    epic-7-retrospective: optional
 
    # ── Epic 8: Release Preparation ──

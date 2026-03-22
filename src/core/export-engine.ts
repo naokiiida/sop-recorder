@@ -40,7 +40,8 @@ export function generateMarkdown(
 
   // Steps
   for (let i = 0; i < recording.steps.length; i++) {
-    const step = recording.steps[i]!;
+    const step = recording.steps[i];
+    if (!step) continue;
     const num = i + 1;
     const padded = String(num).padStart(2, '0');
 

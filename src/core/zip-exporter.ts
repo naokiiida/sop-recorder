@@ -26,9 +26,11 @@ export async function exportAsZip(
   zip.file('sop.md', markdown);
 
   // Add screenshots
-  const screenshotsFolder = zip.folder('screenshots')!;
+  const screenshotsFolder = zip.folder('screenshots');
+  if (!screenshotsFolder) throw new Error('Failed to create screenshots folder in ZIP');
   for (let i = 0; i < recording.steps.length; i++) {
-    const step = recording.steps[i]!;
+    const step = recording.steps[i];
+    if (!step) continue;
     if (!step.screenshotBlobKey) continue;
 
     const blob = await fetchBlob(step.screenshotBlobKey);

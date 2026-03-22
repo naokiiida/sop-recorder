@@ -29,7 +29,7 @@ export class SidePanelPage {
     // Manually trigger a state request to ensure full sync
     await this.page.evaluate(() => {
       const app = document.querySelector('sop-app');
-      // @ts-ignore - accessing private ctrl for testing
+      // @ts-expect-error - accessing private ctrl for testing
       app?.ctrl?.send({ type: 'GET_STATE' });
     });
 
