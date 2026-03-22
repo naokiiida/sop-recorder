@@ -39,15 +39,15 @@ No data is shared automatically, in the background, or without your direct actio
 
 The extension requests the following Chrome permissions, all used exclusively for local recording functionality:
 
-| Permission | Purpose |
-|---|---|
+| Permission  | Purpose                                       |
+| ----------- | --------------------------------------------- |
 | `activeTab` | Access the current tab for screenshot capture |
-| `tabs` | Detect tab navigation during recording |
-| `scripting` | Inject content script for DOM event capture |
-| `storage` | Store recordings locally |
-| `sidePanel` | Display the extension UI |
-| `alarms` | Schedule periodic storage cleanup |
-| `downloads` | Export recordings as files |
+| `tabs`      | Detect tab navigation during recording        |
+| `scripting` | Inject content script for DOM event capture   |
+| `storage`   | Store recordings locally                      |
+| `sidePanel` | Display the extension UI                      |
+| `alarms`    | Schedule periodic storage cleanup             |
+| `downloads` | Export recordings as files                    |
 
 ## Changes to This Policy
 
