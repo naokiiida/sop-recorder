@@ -179,12 +179,14 @@ So that users can choose their preferred export format.
 **And** the download adapter triggers a file download with the generated `.html` file
 **And** the `ExportFormat` type in `src/core/types.ts` is extended to include `'html'`
 **And** the export dispatch in `background.ts` routes `'html'` format to the html-exporter
+**And** E2E test in `export-formats.spec.ts` verifies: HTML export button is visible, clickable, and produces no error alert (mirrors existing ZIP export E2E pattern)
 
 **Technical notes:**
 - Extend `ExportFormat` type union: `'markdown-zip' | 'html'`
 - Add export dispatch case in background service worker
 - Use Lucide `file-text` icon for HTML export button
-- Key files: `src/core/types.ts`, `src/components/sop-editor.ts`, `src/entrypoints/background.ts`
+- E2E test pattern: see `critical-path.spec.ts:46-52` for the ZIP export button verification approach
+- Key files: `src/core/types.ts`, `src/components/sop-editor.ts`, `src/entrypoints/background.ts`, `tests/e2e/export-formats.spec.ts`
 
 **Estimated effort:** S (1 hour)
 
@@ -287,12 +289,15 @@ So that the core logic can be consumed by both the extension and the MCP server.
 **And** adapter interfaces (`src/adapters/interfaces/index.ts`) are moved to `packages/core/src/adapters/interfaces/index.ts`
 **And** `packages/core/src/index.ts` re-exports all public API
 **And** `packages/core/` compiles with `tsc --noEmit` with zero errors
+**And** a structural verification test (`packages/core/tests/exports.test.ts`) imports from `@sop-recorder/core` and asserts all expected public exports are defined (types, functions, adapter interfaces)
+**And** each workspace package has its own `vitest.config.ts` configured for its test directory
 
 **Technical notes:**
 - Keep `packages/core/` as a TypeScript source package (no build step needed — consumers compile it)
 - Use `"exports"` field in package.json pointing to `"./src/index.ts"` for workspace consumers
 - Adapter interfaces are part of core because they define the ports, not the implementations
-- Key files: `pnpm-workspace.yaml`, `packages/core/package.json`, `packages/core/tsconfig.json`, `packages/core/src/index.ts`
+- The structural verification test prevents silent breakage of re-exports during refactoring
+- Key files: `pnpm-workspace.yaml`, `packages/core/package.json`, `packages/core/tsconfig.json`, `packages/core/src/index.ts`, `packages/core/vitest.config.ts`, `packages/core/tests/exports.test.ts`
 
 **Estimated effort:** M (2-3 hours)
 
@@ -424,12 +429,15 @@ So that AI assistants can discover and read SOP recordings.
 **And** server startup time is < 1 second
 **And** `sop_list` response time is < 200ms for 100 recordings
 **And** unit tests mock the filesystem and verify tool responses
+**And** an integration test (`packages/mcp-server/tests/integration/server.test.ts`) spawns the server as a child process, connects via `@modelcontextprotocol/sdk` client, and validates `sop_list` and `sop_read` responses end-to-end over stdio transport
+**And** `packages/mcp-server/vitest.config.ts` is configured with separate unit and integration test paths
 
 **Technical notes:**
 - Use `McpServer` from `@modelcontextprotocol/sdk/server/mcp.js`
 - Use `StdioServerTransport` from `@modelcontextprotocol/sdk/server/stdio.js`
 - Tool inputs validated with zod schemas
-- Key files: `packages/mcp-server/src/server.ts`, `packages/mcp-server/package.json`, `packages/mcp-server/tsconfig.json`
+- Integration test: use `child_process.spawn()` + MCP SDK `Client` with `StdioClientTransport` to exercise the real server binary
+- Key files: `packages/mcp-server/src/server.ts`, `packages/mcp-server/package.json`, `packages/mcp-server/tsconfig.json`, `packages/mcp-server/vitest.config.ts`, `packages/mcp-server/tests/integration/server.test.ts`
 
 **Estimated effort:** M (2-3 hours)
 
@@ -485,13 +493,15 @@ So that the MCP server can access extension data without direct Chrome API acces
 **And** errors respond with `{ type: 'ERROR', error: string }` without crashing the host process
 **And** `packages/mcp-server/src/native-host/manifest.json` defines the native messaging host configuration
 **And** unit tests cover message parsing, each message type, and error handling
+**And** unit tests specifically verify: little-endian uint32 length encoding, messages at the 1MB Chrome limit boundary, malformed length headers (truncated, zero-length, negative), partial stdin reads (chunked delivery), and UTF-8 multi-byte characters in JSON payloads
 
 **Technical notes:**
 - Chrome native messaging: 4-byte length prefix (little-endian uint32) + JSON payload
 - Use `process.stdin` (binary mode) and `process.stdout` for I/O
 - Base64 screenshot blobs: decode with `Buffer.from(base64, 'base64')` and wrap in `Blob`
 - Host manifest `"type": "stdio"`, `"allowed_origins"` must include the extension ID
-- Key files: `packages/mcp-server/src/native-host/host.ts`, `packages/mcp-server/src/native-host/manifest.json`
+- Extract message framing logic into a pure `NativeMessageCodec` class for isolated unit testing
+- Key files: `packages/mcp-server/src/native-host/host.ts`, `packages/mcp-server/src/native-host/codec.ts`, `packages/mcp-server/src/native-host/manifest.json`
 
 **Estimated effort:** M (2-3 hours)
 
@@ -517,11 +527,13 @@ So that the filesystem is kept up-to-date for MCP server access.
 **And** sync failure logs a warning but does not surface an error to the user
 **And** if native host is not installed, `isConnected()` returns `false` and sync is silently skipped
 **And** the extension manifest declares `"nativeMessaging"` permission
+**And** unit tests verify: base64 blob conversion produces correct output, `SYNC_RECORDING` message structure matches native host expectations, `isConnected()` returns `false` when `connectNative` throws, sync failure does not propagate errors to callers
 
 **Technical notes:**
 - `chrome.runtime.connectNative()` throws if the native host is not registered — catch and return `false`
 - Blobs converted to base64 via `FileReader.readAsDataURL()` before sending
 - Sync is fire-and-forget from the user's perspective
+- Extract blob-to-base64 conversion and message formatting into testable pure functions
 - Key files: `packages/extension/src/adapters/chrome/native-sync-adapter.ts`, `packages/extension/src/entrypoints/background.ts`, `packages/extension/wxt.config.ts` (add permission)
 
 **Estimated effort:** M (2-3 hours)
@@ -631,12 +643,14 @@ So that users can use OpenAI, OpenRouter, local LLMs, or any compatible endpoint
 **And** API key is never logged to console or included in error messages
 **And** network errors surface a user-friendly message: "AI enhancement failed. Your steps are unchanged."
 **And** unit tests mock `fetch()` and verify request format, response parsing, and error handling
+**And** unit tests verify API key is never present in: error messages thrown, error objects caught, or console output (mock `console.error`/`console.warn` and assert API key string is absent from all logged arguments)
 
 **Technical notes:**
 - No new dependencies — uses native `fetch()`
 - Default model: `gpt-4o-mini`, configurable via `AISettings.model`
 - Default endpoint: `https://api.openai.com/v1`, configurable via `AISettings.apiEndpoint`
 - Extension requires `optional_host_permissions` for the configured endpoint URL
+- API key leak test: set API key to a unique sentinel string, trigger error paths, assert sentinel never appears in caught errors or console spy call args
 - Key files: `packages/extension/src/adapters/ai/openai-provider.ts`
 
 **Estimated effort:** M (2-3 hours)
@@ -732,12 +746,21 @@ So that users can set up their API key, select a provider, and test the connecti
 **And** navigation to settings is accessible from a gear icon in the `sop-app` header
 **And** back button returns to the previous view
 **And** the component uses light DOM, `--sop-*` CSS variables, and Lucide icons
+**And** unit tests (using `@open-wc/testing` or equivalent Lit test harness) verify:
+  - Component renders provider selector with correct options
+  - "Chrome Built-in AI" option is hidden when `ChromeAIProvider.isAvailable()` returns `false`
+  - Selecting "OpenAI-Compatible API" reveals API key, endpoint, and model inputs
+  - API key input is `type="password"` by default, toggles to `type="text"` on show/hide click
+  - "Test Connection" button calls the provider and displays success (green check) or failure (red X) indicator
+  - "Clear API Key" button requires confirmation before clearing
+  - Settings are persisted via adapter mock on form submission
 
 **Technical notes:**
 - Follow existing component patterns: `createRenderRoot() { return this; }`, PicoCSS semantic HTML
 - Use `<article>` for card containers, `<fieldset>` for form groups
 - AI settings adapter: `packages/extension/src/adapters/chrome/ai-settings-adapter.ts` (stores in `chrome.storage.local` under key `sop_ai_settings`)
-- Key files: `packages/extension/src/components/sop-settings.ts`, `packages/extension/src/adapters/chrome/ai-settings-adapter.ts`, `packages/extension/src/components/sop-app.ts` (add settings navigation)
+- Lit component testing: use `fixture(html`<sop-settings></sop-settings>`)` + `@open-wc/testing` for rendering, or use vitest + jsdom with manual element creation
+- Key files: `packages/extension/src/components/sop-settings.ts`, `packages/extension/src/adapters/chrome/ai-settings-adapter.ts`, `packages/extension/src/components/sop-app.ts` (add settings navigation), `tests/unit/components/sop-settings.test.ts`
 
 **Estimated effort:** L (3 hours)
 
@@ -771,12 +794,22 @@ So that users can improve their step descriptions with AI while being fully info
 **And** "Accept All" / "Reject All" bulk action buttons
 **And** if PII is detected in step data, a warning appears before sending: "Potential PII detected: {matches}. Proceed anyway?"
 **And** enhancement failure preserves original step data with an error toast
+**And** unit tests for `sop-consent-dialog.ts` verify:
+  - Dialog is non-dismissable (clicking outside does not close it)
+  - "Allow" button is disabled until the consent checkbox is checked
+  - Consent stores the endpoint URL so re-consent is required on endpoint change
+**And** E2E test in `ai-enhancement.spec.ts` verifies:
+  - "Enhance with AI" button is visible when provider is configured
+  - Consent dialog appears on first click (mock AI endpoint)
+  - After consent, enhancement diff view renders with accept/reject buttons
+  - "Accept All" applies changes, "Reject All" preserves originals
 
 **Technical notes:**
 - Privacy consent modal: use `<dialog>` element (native modal behavior)
 - Diff view: `<del>` for original, `<ins>` for enhanced (PicoCSS styles these)
 - Wire up `AIEnhancementService` via the background service worker — enhancement runs in background context for `fetch()` access
-- Key files: `packages/extension/src/components/sop-editor.ts`, `packages/extension/src/components/sop-consent-dialog.ts` (new), `packages/extension/src/entrypoints/background.ts`
+- E2E test: use Playwright route interception to mock the AI API endpoint response
+- Key files: `packages/extension/src/components/sop-editor.ts`, `packages/extension/src/components/sop-consent-dialog.ts` (new), `packages/extension/src/entrypoints/background.ts`, `tests/unit/components/sop-consent-dialog.test.ts`, `tests/e2e/ai-enhancement.spec.ts`
 
 **Estimated effort:** L (3 hours)
 
@@ -855,13 +888,19 @@ So that users have a fully functional annotation editing interface.
 **And** default color is `--sop-recording-color` (red)
 **And** `@media (hover: none)` provides larger touch targets for toolbar buttons
 **And** the component fills available side panel width and is usable at 400px
+**And** unit tests verify:
+  - `normalizeCoordinates(clientX, clientY, containerRect)` correctly converts pixel coords to 0-1 range for various container sizes and scroll offsets
+  - Undo/redo stack: adding 25 annotations then undoing 20 produces correct state; redo after undo restores; new annotation after undo clears redo stack
+  - Tool switching: selecting a tool updates `activeTool` property; switching mid-draw discards incomplete annotation
+  - "Done" event dispatches with the current `AnnotationLayer` including all annotations
 
 **Technical notes:**
 - Light DOM rendering with `createRenderRoot() { return this; }`
 - `<svg viewBox="0 0 1 1" preserveAspectRatio="none">` for normalized coordinate space
 - Tool-specific drawing logic is delegated to Stories 13.3-13.4
 - This story sets up the shell, toolbar, undo/redo, and coordinate system
-- Key files: `packages/extension/src/components/sop-annotation-editor.ts`
+- Extract `normalizeCoordinates()` and undo/redo stack logic into pure utility functions for isolated unit testing
+- Key files: `packages/extension/src/components/sop-annotation-editor.ts`, `packages/extension/src/components/annotation-utils.ts`, `tests/unit/components/annotation-editor.test.ts`
 
 **Estimated effort:** L (3 hours)
 
@@ -895,12 +934,16 @@ So that users can point to elements and highlight areas in screenshots.
 **And** drawing maintains 60fps (no layout thrashing during `pointermove`)
 **And** each completed annotation is pushed to the undo stack
 **And** individual annotations can be deleted: click on an annotation to select it (dashed outline), then press Delete key or click a delete button
+**And** unit tests verify:
+  - Arrow: minimum drag distance filter prevents accidental dots; start/end coordinates are correctly normalized
+  - Rectangle: negative dimensions (drag up-left) are normalized to positive width/height with adjusted origin
+  - Both tools: produced annotation objects have correct `tool` type, `color`, and coordinate fields
 
 **Technical notes:**
 - Use `setPointerCapture()` on `pointerdown` for smooth drawing outside the SVG bounds
 - Arrowhead marker: `<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" /></marker>`
 - Negative rect dimensions: normalize by swapping origin and using absolute width/height
-- Key files: `packages/extension/src/components/sop-annotation-editor.ts`
+- Key files: `packages/extension/src/components/sop-annotation-editor.ts`, `tests/unit/components/annotation-tools.test.ts`
 
 **Estimated effort:** M (2-3 hours)
 
@@ -937,12 +980,17 @@ So that users have a complete set of annotation tools for different use cases.
   - Path simplification: Douglas-Peucker algorithm with tolerance of 0.002 (normalized) to reduce point count
 **And** all tools respect the currently selected color
 **And** each completed annotation is pushed to the undo stack
+**And** unit tests verify:
+  - Freehand: Douglas-Peucker simplification reduces a 100-point straight line to 2 points; preserves corners on an L-shaped path
+  - Freehand: point throttling (every 3rd event) reduces recorded point count
+  - Text: annotation stores correct normalized position and text content
+  - Ellipse: bounding box to `cx, cy, rx, ry` conversion is correct for any drag direction
 
 **Technical notes:**
 - Text input overlay: position an `<input>` absolutely over the SVG at the click coordinates
 - Freehand point throttling: use a counter rather than `requestAnimationFrame` for simplicity
-- Douglas-Peucker: simple recursive implementation, ~20 lines
-- Key files: `packages/extension/src/components/sop-annotation-editor.ts`
+- Douglas-Peucker: simple recursive implementation, ~20 lines — extract into `packages/core/src/douglas-peucker.ts` for pure unit testing
+- Key files: `packages/extension/src/components/sop-annotation-editor.ts`, `packages/core/src/douglas-peucker.ts`, `tests/unit/core/douglas-peucker.test.ts`
 
 **Estimated effort:** M (2-3 hours)
 
@@ -1003,11 +1051,17 @@ So that exported SOPs show annotated screenshots and users can reach the editor 
 **And** saving annotations updates the `RecordedStep.annotations` field and persists via the storage adapter
 **And** thumbnails in the step card show annotation previews (re-render thumbnail with annotations overlaid)
 **And** the editor stores annotation changes immediately (no separate save step)
+**And** integration tests verify:
+  - `exportAsZip()` with annotated step produces a ZIP where the screenshot file size is larger than the original (composited)
+  - `exportAsHtml()` with annotated step produces base64 data URI that differs from the original screenshot
+  - Steps without annotations produce identical output to pre-annotation behavior (no regression)
+  - Compositor fallback: when `OffscreenCanvas` is unavailable, export gracefully includes original un-composited screenshots with a warning
 
 **Technical notes:**
 - Export pipeline modification: wrap `fetchBlob` to intercept steps with annotations and composite before returning
 - Thumbnail annotation preview: render SVG annotations inline in the step card thumbnail (reuse the SVG overlay approach from the editor)
-- Key files: `packages/core/src/export/export-engine.ts`, `packages/extension/src/components/sop-step-card.ts`, `packages/extension/src/components/sop-editor.ts`
+- Integration tests can use the existing `makeRecording`/`makeStep` helpers with annotations added
+- Key files: `packages/core/src/export/export-engine.ts`, `packages/extension/src/components/sop-step-card.ts`, `packages/extension/src/components/sop-editor.ts`, `tests/unit/core/annotation-export.test.ts`
 
 **Estimated effort:** M (2-3 hours)
 
@@ -1081,12 +1135,14 @@ So that Firefox users have the same side-by-side SOP recording experience.
 **And** recording state sync between content script and sidebar works identically to Chrome
 **And** a browser-detection utility is created: `isFirefox()` / `isChrome()` for conditional API calls
 **And** `chrome.tabs.captureVisibleTab` is wrapped with Firefox-compatible behavior
+**And** unit tests verify `isFirefox()` and `isChrome()` return correct values when `globalThis.browser` / `globalThis.chrome` are present/absent
 
 **Technical notes:**
 - Firefox sidebar uses `browser.sidebarAction` — different API surface but same concept
 - WXT may handle this via its cross-browser abstraction — check WXT docs first
 - Browser detection: `typeof browser !== 'undefined'` (Firefox) vs `typeof chrome !== 'undefined'` (Chrome)
-- Key files: `packages/extension/src/entrypoints/sidepanel/`, `packages/extension/src/adapters/chrome/` (may need renaming to `browser/`)
+- Extract browser detection into `packages/core/src/browser-detect.ts` for easy unit testing
+- Key files: `packages/extension/src/entrypoints/sidepanel/`, `packages/extension/src/adapters/chrome/` (may need renaming to `browser/`), `packages/core/src/browser-detect.ts`, `tests/unit/core/browser-detect.test.ts`
 
 **Estimated effort:** M (2-3 hours)
 
@@ -1216,12 +1272,17 @@ So that legitimate data is not accidentally hidden in SOPs.
 **And** "Unredact" does not restore the original screenshot (pixels are already blurred) — it only prevents re-application if the step were re-captured
 **And** a manual "Add Redaction" button lets users draw blur rectangles on screenshots (reuses annotation editor rectangle tool with blur fill instead of stroke)
 **And** redaction decisions persist with the recording metadata
+**And** unit tests verify:
+  - Redaction badge renders with correct count of redacted items
+  - "Unredact" toggle updates the redacted region's `approved` flag
+  - Persisted redaction decisions survive component re-render (mock storage adapter)
+  - Manual "Add Redaction" button only appears when annotation editor dependency is available
 
 **Technical notes:**
 - Redaction review is informational for screenshots already captured — the blur is baked into the bitmap
 - Manual redaction uses the annotation compositor to apply blur rectangles on export
 - Consider integrating with the annotation editor: a "Blur" tool alongside Arrow, Rectangle, etc.
-- Key files: `packages/extension/src/components/sop-step-card.ts`, `packages/extension/src/components/sop-editor.ts`
+- Key files: `packages/extension/src/components/sop-step-card.ts`, `packages/extension/src/components/sop-editor.ts`, `tests/unit/components/redaction-review.test.ts`
 
 **Estimated effort:** M (2-3 hours)
 
@@ -1286,11 +1347,13 @@ So that users can back up, share, and round-trip their SOPs.
 **And** an "Import SOP" button is added to the home view
 **And** the import button opens a file picker (`<input type="file" accept=".sop-recorder.json">`)
 **And** unit tests cover: round-trip (export then import), malformed input, missing screenshots
+**And** adversarial import tests specifically verify: deeply nested JSON (prototype pollution guard), missing required fields at each level, incompatible `version` number (future version), truncated file (incomplete JSON), empty file, wrong MIME type, file exceeding 50MB produces warning (not crash), and `recording.id` collision with existing recording generates a new ID
 
 **Technical notes:**
 - Export format version: `{ format: 'sop-recorder', version: 1, recording: {...}, screenshots: { [key]: base64 } }`
 - Runtime validation: check required fields exist and have correct types (no zod dependency in extension)
 - Large recordings may produce large JSON files — warn if file size exceeds 50 MB
+- Adversarial tests: create fixture files or use `new File([jsonString], 'test.sop-recorder.json')` in vitest
 - Key files: `packages/core/src/export/json-exporter.ts`, `packages/core/src/import/json-importer.ts`, `packages/extension/src/components/sop-home.ts`, `packages/extension/src/components/sop-editor.ts`
 
 **Estimated effort:** M (2-3 hours)
@@ -1401,11 +1464,13 @@ So that users can quickly scaffold E2E tests based on their recorded SOPs.
 **And** the generated test compiles with `tsc` (valid TypeScript)
 **And** an "Export as Playwright Test" option is added to the export UI (Lucide `test-tube` icon)
 **And** unit tests verify generated code structure for various step types
+**And** a compilation verification test writes the generated test to a temp file and runs `tsc --noEmit` with `@playwright/test` types to confirm the output is valid TypeScript
 
 **Technical notes:**
 - Playwright selector preference: `data-testid` > `aria-label` > CSS selector
 - Input values should use placeholder: `'TODO: replace with test value'` unless the step has non-masked input
 - Generated test is a starting point — users will need to customize assertions
+- Compilation test: use `child_process.execSync('npx tsc --noEmit tempFile.ts')` in vitest with a temp directory
 - Key files: `packages/core/src/export/playwright-generator.ts`, `packages/extension/src/components/sop-editor.ts`
 
 **Estimated effort:** M (2-3 hours)

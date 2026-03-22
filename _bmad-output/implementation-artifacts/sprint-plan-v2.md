@@ -31,6 +31,7 @@
 - "Export as HTML" button appears alongside "Export as ZIP" in editor view
 - Export completes in < 500ms for 10 steps, < 2 seconds for 50 steps
 - Unit tests verify: output structure, XSS prevention, base64 embedding, print styles
+- E2E test verifies HTML export button is visible, clickable, and produces no error
 
 ### Risks/Notes
 
@@ -65,6 +66,8 @@
 - All existing unit tests and E2E tests pass
 - All three export formats (ZIP, HTML, Tour) available in editor UI
 - `pnpm run dev`, `pnpm run build`, `pnpm run test:unit`, `pnpm run test:e2e` work from workspace root
+- Each workspace package has its own `vitest.config.ts`
+- Structural verification test confirms all expected exports from `@sop-recorder/core` are accessible
 
 ### Risks/Notes
 
@@ -102,6 +105,9 @@
 - MCP server works with Claude Desktop via stdio transport
 - Server startup time < 1 second, `sop_list` response < 200ms for 100 recordings
 - Unit tests cover all MCP tools, file adapters, message parsing, and error handling
+- Integration test spawns MCP server and validates tool responses via SDK client over stdio
+- Native messaging codec tests cover endianness, 1MB boundary, malformed headers, partial reads
+- NativeSyncAdapter tests verify base64 conversion and message structure
 
 ### Risks/Notes
 
@@ -142,6 +148,10 @@
 - Enhancement diff with per-step accept/reject UI in editor view
 - API key is never exported, logged, or included in error messages
 - Unit tests cover all providers, prompt building, PII detection, and error handling
+- API key leak prevention tests verify key is never present in errors or console output
+- Settings UI component tests verify conditional rendering for each provider state
+- Consent dialog component tests verify non-dismissability and per-endpoint consent tracking
+- E2E test verifies consent flow and enhancement diff accept/reject UI
 
 ### Risks/Notes
 
@@ -180,6 +190,9 @@
 - Annotation rendering maintains 60fps during drawing
 - Backward compatibility: existing recordings without annotations remain valid
 - Color picker offers 6 preset colors with red as default
+- Unit tests cover coordinate normalization, undo/redo stack, tool-specific geometry (arrow min distance, negative rect normalization, Douglas-Peucker simplification)
+- Integration tests verify export pipeline produces composited screenshots for annotated steps
+- Compositor fallback path tested when OffscreenCanvas is unavailable
 
 ### Risks/Notes
 
@@ -216,6 +229,7 @@
 - Playwright E2E tests run on Firefox via `pnpm run test:e2e:firefox`
 - CI pipeline includes Firefox test job
 - Extension is publishable to AMO (Firefox Add-ons)
+- Browser detection utility (`isFirefox()`/`isChrome()`) has unit tests
 
 ### Risks/Notes
 
@@ -255,6 +269,8 @@
 - Two recordings can be merged into one with correct step renumbering
 - Redaction is opt-in (disabled by default)
 - All features have unit test coverage
+- Redaction review UI has component tests for badge count, unredact toggle, and persistence
+- Import includes adversarial test cases: deeply nested JSON, missing fields, incompatible version, truncated file, 50MB+ file warning
 
 ### Risks/Notes
 
@@ -290,6 +306,7 @@
 - "Export as Playwright Test" option available in editor export UI
 - Generated test includes step comments and TODO placeholders for assertions
 - Unit tests verify generated code structure for various step types
+- Compilation verification test confirms generated Playwright test is valid TypeScript via `tsc --noEmit`
 
 ### Risks/Notes
 
