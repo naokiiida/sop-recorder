@@ -58,7 +58,7 @@ export class SopApp extends LitElement {
       `;
     }
     return html`
-      <div role="application" aria-label="SOP Recorder">
+      <div role="application" aria-label="nuknow">
         ${this.ctrl.viewState === 'edit'
           ? html`<button class="sop-back-button" style="margin-bottom:var(--sop-gap-card);" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>`
           : nothing}

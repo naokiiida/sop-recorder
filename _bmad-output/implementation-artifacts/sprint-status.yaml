@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-22
+last_updated: 2026-03-22 # Story 8.3 created
 project: sop-recorder
 project_key: NOKEY
 tracking_system: file-system
@@ -112,6 +112,78 @@ development_status:
    # ── Epic 8: Release Preparation ──
    epic-8: in-progress
    8-1-create-extension-icons-and-cws-store-assets: review
-   8-2-create-readme-and-repository-setup: ready-for-dev
-   8-3-chrome-web-store-submission-validation: backlog
+   8-2-create-readme-and-repository-setup: review
+   8-3-chrome-web-store-submission-validation: ready-for-dev
    epic-8-retrospective: optional
+
+  # ══════════════════════════════════════════
+  # v2 Epics and Stories (Sprints 9-16)
+  # ══════════════════════════════════════════
+
+  # ── Epic 9: Multi-Format Export (v1.1 + v2.0) ──
+  epic-9: backlog
+  9-1-implement-html-exporter-core: backlog
+  9-2-add-html-export-button-to-editor-ui: backlog
+  9-3-implement-tour-exporter-core: backlog
+  9-4-add-tour-export-ui-and-format-selection: backlog
+  epic-9-retrospective: optional
+
+  # ── Epic 10: pnpm Workspace Refactor ──
+  epic-10: backlog
+  10-1-extract-core-into-packages-core-shared-package: backlog
+  10-2-update-extension-to-consume-from-packages-core: backlog
+  10-3-verify-all-existing-tests-pass-after-refactor: backlog
+  epic-10-retrospective: optional
+
+  # ── Epic 11: MCP Server Integration ──
+  epic-11: backlog
+  11-1-implement-file-storage-adapter-and-file-blob-store: backlog
+  11-2-implement-mcp-server-with-sop-list-and-sop-read: backlog
+  11-3-implement-sop-export-and-sop-search-tools: backlog
+  11-4-implement-native-messaging-host: backlog
+  11-5-add-native-sync-adapter-to-extension-background: backlog
+  11-6-create-installation-script-and-documentation: backlog
+  epic-11-retrospective: optional
+
+  # ── Epic 12: AI Step Enhancement (BYOK) ──
+  epic-12: backlog
+  12-1-define-iaiprovider-interface-and-aisettings-types: backlog
+  12-2-implement-openai-compatible-provider: backlog
+  12-3-implement-chrome-built-in-ai-provider: backlog
+  12-4-implement-ai-enhancement-service-and-prompt-builder: backlog
+  12-5-implement-settings-ui-component: backlog
+  12-6-add-enhance-buttons-to-editor-and-privacy-consent-flow: backlog
+  epic-12-retrospective: optional
+
+  # ── Epic 13: Screenshot Annotation Editor ──
+  epic-13: backlog
+  13-1-define-annotation-data-model-and-types: backlog
+  13-2-implement-svg-annotation-editor-component: backlog
+  13-3-implement-arrow-and-rectangle-tools: backlog
+  13-4-implement-ellipse-text-and-freehand-tools: backlog
+  13-5-implement-annotation-compositor-for-export: backlog
+  13-6-integrate-annotations-with-export-pipeline-and-thumbnails: backlog
+  epic-13-retrospective: optional
+
+  # ── Epic 14: Cross-Browser Support (Firefox) ──
+  epic-14: backlog
+  14-1-firefox-compatibility-audit-and-wxt-config: backlog
+  14-2-adapt-side-panel-to-firefox-sidebar-api: backlog
+  14-3-firefox-e2e-test-setup-and-validation: backlog
+  epic-14-retrospective: optional
+
+  # ── Epic 15: Advanced Features (v2.1) ──
+  epic-15: backlog
+  15-1-pii-detection-engine: backlog
+  15-2-css-blur-redaction-overlay: backlog
+  15-3-redaction-review-ui: backlog
+  15-4-claude-shortcut-export: backlog
+  15-5-import-export-sop-recorder-json-format: backlog
+  15-6-recording-merge-functionality: backlog
+  epic-15-retrospective: optional
+
+  # ── Epic 16: Claude Code Integration (v3.0) ──
+  epic-16: backlog
+  16-1-claude-code-skill-definitions: backlog
+  16-2-playwright-test-skeleton-generator: backlog
+  epic-16-retrospective: optional

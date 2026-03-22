@@ -1,5 +1,5 @@
 {
-  "name": "sop-recorder",
+  "name": "nuknow",
   "version": "1.0.0",
   "description": "Chrome extension that records browser interactions and produces documented SOPs with annotated screenshots.",
   "type": "module",
@@ -24,7 +24,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@10.32.1",
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
