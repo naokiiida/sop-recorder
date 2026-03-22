@@ -1,6 +1,6 @@
 # Story 8.3: Chrome Web Store Submission Validation
 
-Status: ready-for-dev
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -179,7 +179,7 @@ No changes to `src/` directory.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6 (1M context)
 
 ### Debug Log References
 
