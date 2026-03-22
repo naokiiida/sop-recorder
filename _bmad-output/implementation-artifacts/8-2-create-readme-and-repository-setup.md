@@ -214,6 +214,7 @@ None required.
 ### Change Log
 
 - 2026-03-22: Story 8.2 implementation complete — created README.md, LICENSE, CONTRIBUTING.md, GitHub issue templates, renamed SOP Recorder references to nuknow, fixed icon generation script.
+- 2026-03-22: Addressed code review findings (review-8-2.md) — 4 Patch items resolved (P-1: temp file cleanup + rename, P-2: ImageMagick check, P-3: SVG existence check, P-4: CONTRIBUTING.md deduplication). Intent Gaps, Bad Spec, and Defer items triaged as no-action-needed.
 
 ### File List
 
