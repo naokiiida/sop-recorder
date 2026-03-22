@@ -49,7 +49,15 @@ function handleClick(event: MouseEvent): void {
   // Build a target ID for the event filter
   const targetId = getTargetId(target);
 
-  if (!eventFilter.shouldCapture({ isTrusted: event.isTrusted, type: 'click', targetId, timestamp: event.timeStamp })) return;
+  if (
+    !eventFilter.shouldCapture({
+      isTrusted: event.isTrusted,
+      type: 'click',
+      targetId,
+      timestamp: event.timeStamp,
+    })
+  )
+    return;
 
   const metadata = extractElementMetadata(target);
   const capturedEvent = buildCapturedEvent('click', metadata, event);
@@ -67,7 +75,15 @@ function handleDblClick(event: MouseEvent): void {
   if (!(target instanceof Element)) return;
 
   const targetId = getTargetId(target);
-  if (!eventFilter.shouldCapture({ isTrusted: event.isTrusted, type: 'dblclick', targetId, timestamp: event.timeStamp })) return;
+  if (
+    !eventFilter.shouldCapture({
+      isTrusted: event.isTrusted,
+      type: 'dblclick',
+      targetId,
+      timestamp: event.timeStamp,
+    })
+  )
+    return;
 
   const metadata = extractElementMetadata(target);
   const capturedEvent = buildCapturedEvent('dblclick', metadata, event);
@@ -83,7 +99,15 @@ function handleInput(event: Event): void {
   if (!(target instanceof Element)) return;
 
   const targetId = getTargetId(target);
-  if (!eventFilter.shouldCapture({ isTrusted: event.isTrusted, type: 'input', targetId, timestamp: event.timeStamp })) return;
+  if (
+    !eventFilter.shouldCapture({
+      isTrusted: event.isTrusted,
+      type: 'input',
+      targetId,
+      timestamp: event.timeStamp,
+    })
+  )
+    return;
 
   const metadata = extractElementMetadata(target);
   const capturedEvent = buildCapturedEvent('input', metadata);
@@ -99,7 +123,10 @@ function handleChange(event: Event): void {
 
   // Determine the specific action type
   let actionType: StepAction = 'select';
-  if (target instanceof HTMLInputElement && (target.type === 'checkbox' || target.type === 'radio')) {
+  if (
+    target instanceof HTMLInputElement &&
+    (target.type === 'checkbox' || target.type === 'radio')
+  ) {
     actionType = 'check';
   }
 
@@ -158,7 +185,9 @@ function handleKeydown(event: KeyboardEvent): void {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function getTargetId(element: Element): string {
-  return element.id || element.getAttribute('data-testid') || `${element.tagName}:${element.className}`;
+  return (
+    element.id || element.getAttribute('data-testid') || `${element.tagName}:${element.className}`
+  );
 }
 
 interface ElementMeta {
@@ -199,13 +228,16 @@ function buildCapturedEvent(
 const eventBuffer: CapturedEvent[] = [];
 
 function sendEvent(event: CapturedEvent): void {
-  browser.runtime.sendMessage({ type: 'STEP_CAPTURED', payload: event }).then(() => {
-    // On successful send, flush any buffered events
-    flushBuffer();
-  }).catch((err: unknown) => {
-    console.warn('[SOP Recorder] Failed to send event, buffering:', err);
-    eventBuffer.push(event);
-  });
+  browser.runtime
+    .sendMessage({ type: 'STEP_CAPTURED', payload: event })
+    .then(() => {
+      // On successful send, flush any buffered events
+      flushBuffer();
+    })
+    .catch((err: unknown) => {
+      console.warn('[SOP Recorder] Failed to send event, buffering:', err);
+      eventBuffer.push(event);
+    });
 }
 
 function flushBuffer(): void {
@@ -214,10 +246,12 @@ function flushBuffer(): void {
   eventBuffer.length = 0;
 
   for (const buffered of pending) {
-    browser.runtime.sendMessage({ type: 'STEP_CAPTURED', payload: buffered }).catch((err: unknown) => {
-      console.warn('[SOP Recorder] Buffer flush failed, re-queuing:', err);
-      eventBuffer.push(buffered);
-    });
+    browser.runtime
+      .sendMessage({ type: 'STEP_CAPTURED', payload: buffered })
+      .catch((err: unknown) => {
+        console.warn('[SOP Recorder] Buffer flush failed, re-queuing:', err);
+        eventBuffer.push(buffered);
+      });
   }
 }
 

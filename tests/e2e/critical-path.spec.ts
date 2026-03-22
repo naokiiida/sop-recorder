@@ -14,7 +14,7 @@ test('full record -> edit -> export flow', async ({ context, extensionId }) => {
   await testPage.locator('[data-testid="btn-save"]').click();
   // Wait for the step to be captured (panel handles async capture)
   await panel.waitForStepCount(1);
-  
+
   await testPage.locator('[data-testid="btn-cancel"]').click();
   await panel.waitForStepCount(2);
 

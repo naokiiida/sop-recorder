@@ -44,13 +44,17 @@ export class SopScreenshotLightbox extends LitElement {
 
   override render() {
     return html`
-      <dialog open
+      <dialog
+        open
         @click=${this.handleBackdropClick}
         @keydown=${this.handleFocusTrap}
         aria-label="Screenshot viewer"
         aria-modal="true"
       >
-        <article @click=${(e: Event) => e.stopPropagation()} style="max-width:95vw;max-height:95vh;overflow:auto;">
+        <article
+          @click=${(e: Event) => e.stopPropagation()}
+          style="max-width:95vw;max-height:95vh;overflow:auto;"
+        >
           <header>
             <button aria-label="Close" rel="prev" @click=${this.close}></button>
             <p><strong>Screenshot</strong></p>
@@ -110,7 +114,9 @@ export class SopScreenshotLightbox extends LitElement {
     if (e.key !== 'Tab') return;
     const dialog = this.querySelector('dialog');
     if (!dialog) return;
-    const focusable = dialog.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"])');
+    const focusable = dialog.querySelectorAll<HTMLElement>(
+      'button, [tabindex]:not([tabindex="-1"])',
+    );
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
     if (!first || !last) return;

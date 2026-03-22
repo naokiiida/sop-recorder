@@ -1,17 +1,11 @@
 import type { RecordingState } from '../core/types.js';
 
-export type StateChangeCallback = (
-  newState: RecordingState,
-  previousState: RecordingState,
-) => void;
+export type StateChangeCallback = (newState: RecordingState, previousState: RecordingState) => void;
 
 /**
  * Valid transitions map: from-state -> { action -> to-state }
  */
-const TRANSITIONS: Record<
-  RecordingState,
-  Partial<Record<string, RecordingState>>
-> = {
+const TRANSITIONS: Record<RecordingState, Partial<Record<string, RecordingState>>> = {
   idle: { start: 'recording' },
   recording: { pause: 'paused', stop: 'idle' },
   paused: { resume: 'recording', stop: 'idle' },
@@ -65,19 +59,14 @@ export class RecordingStateMachine {
   private transition(action: string): void {
     const nextState = TRANSITIONS[this.state]?.[action];
     if (nextState === undefined) {
-      throw new Error(
-        `Invalid transition: cannot "${action}" from "${this.state}"`,
-      );
+      throw new Error(`Invalid transition: cannot "${action}" from "${this.state}"`);
     }
     const previous = this.state;
     this.state = nextState;
     this.notifyObservers(nextState, previous);
   }
 
-  private notifyObservers(
-    newState: RecordingState,
-    previousState: RecordingState,
-  ): void {
+  private notifyObservers(newState: RecordingState, previousState: RecordingState): void {
     for (const cb of this.observers) {
       cb(newState, previousState);
     }

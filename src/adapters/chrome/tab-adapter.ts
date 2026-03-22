@@ -32,8 +32,8 @@ export class ChromeTabAdapter implements ITabAdapter {
     }
     // Prefer non-extension, non-chrome tabs (skip the side panel itself)
     const tab =
-      tabs.find(t => t.id && t.url && !isRestrictedUrl(t.url)) ||
-      tabs.find(t => t.id != null && t.url);
+      tabs.find((t) => t.id && t.url && !isRestrictedUrl(t.url)) ||
+      tabs.find((t) => t.id != null && t.url);
     if (!tab?.id || !tab.url) return null;
     return { id: tab.id, url: tab.url, title: tab.title ?? '' };
   }

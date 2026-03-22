@@ -40,9 +40,7 @@ describe('StepManager', () => {
     it('creates a RecordedStep with UUID, sequenceNumber, and auto-generated title', () => {
       const step = manager.addStep(makeEvent(), 'blob-1');
 
-      expect(step.id).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(step.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
       expect(step.sequenceNumber).toBe(1);
       expect(step.title).toBe("Clicked 'Save' button");
       expect(step.description).toBe('');
@@ -132,7 +130,12 @@ describe('StepManager', () => {
 
     it('input', () => {
       const step = manager.addStep(
-        makeEvent({ type: 'input', accessibleName: 'Email', tagName: 'INPUT', elementType: 'email' }),
+        makeEvent({
+          type: 'input',
+          accessibleName: 'Email',
+          tagName: 'INPUT',
+          elementType: 'email',
+        }),
         'b',
       );
       expect(step.title).toBe("Typed in 'Email' field");
@@ -156,7 +159,12 @@ describe('StepManager', () => {
 
     it('check', () => {
       const step = manager.addStep(
-        makeEvent({ type: 'check', accessibleName: 'Remember me', tagName: 'INPUT', elementType: 'checkbox' }),
+        makeEvent({
+          type: 'check',
+          accessibleName: 'Remember me',
+          tagName: 'INPUT',
+          elementType: 'checkbox',
+        }),
         'b',
       );
       expect(step.title).toBe("Toggled 'Remember me' checkbox");
@@ -164,7 +172,11 @@ describe('StepManager', () => {
 
     it('navigate', () => {
       const step = manager.addStep(
-        makeEvent({ type: 'navigate', accessibleName: '', pageUrl: 'https://example.com/dashboard' }),
+        makeEvent({
+          type: 'navigate',
+          accessibleName: '',
+          pageUrl: 'https://example.com/dashboard',
+        }),
         'b',
       );
       expect(step.title).toBe('Navigated to /dashboard');
@@ -200,10 +212,7 @@ describe('StepManager', () => {
     });
 
     it('keypress with inputValue', () => {
-      const step = manager.addStep(
-        makeEvent({ type: 'keypress', inputValue: 'Enter' }),
-        'b',
-      );
+      const step = manager.addStep(makeEvent({ type: 'keypress', inputValue: 'Enter' }), 'b');
       expect(step.title).toBe("Pressed 'Enter' key");
     });
 
@@ -314,9 +323,7 @@ describe('StepManager', () => {
     });
 
     it('throws when step not found', () => {
-      expect(() => manager.deleteStep('nonexistent')).toThrow(
-        'Step not found: nonexistent',
-      );
+      expect(() => manager.deleteStep('nonexistent')).toThrow('Step not found: nonexistent');
     });
   });
 
@@ -347,9 +354,7 @@ describe('StepManager', () => {
 
     it('throws when step not found', () => {
       manager.addStep(makeEvent(), 'b');
-      expect(() => manager.reorderStep('nonexistent', 0)).toThrow(
-        'Step not found: nonexistent',
-      );
+      expect(() => manager.reorderStep('nonexistent', 0)).toThrow('Step not found: nonexistent');
     });
 
     it('throws when newIndex is negative', () => {

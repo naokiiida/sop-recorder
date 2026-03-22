@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock requestAnimationFrame
-vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { cb(0); return 0; });
+vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+  cb(0);
+  return 0;
+});
 
 // Must import after mocking
 const { announce } = await import('../../../src/components/sop-app.js');

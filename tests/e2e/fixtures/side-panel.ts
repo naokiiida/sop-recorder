@@ -25,7 +25,7 @@ export class SidePanelPage {
   async goto(): Promise<void> {
     await this.page.goto(`chrome-extension://${this.extensionId}/sidepanel.html`);
     await this.page.waitForSelector('sop-app');
-    
+
     // Manually trigger a state request to ensure full sync
     await this.page.evaluate(() => {
       const app = document.querySelector('sop-app');

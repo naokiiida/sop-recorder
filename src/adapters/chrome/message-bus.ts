@@ -1,9 +1,5 @@
 import type { IMessageBus, PanelPort } from '../interfaces/index.js';
-import type {
-  ContentMessage,
-  BackgroundToPanelMessage,
-  PanelMessage,
-} from '../../core/types.js';
+import type { ContentMessage, BackgroundToPanelMessage, PanelMessage } from '../../core/types.js';
 
 /**
  * Chrome Message Bus — routes messages between content scripts and side panel.

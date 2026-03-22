@@ -16,7 +16,9 @@ export function announce(message: string, priority: 'polite' | 'assertive' = 'po
   if (!el) return;
   el.setAttribute('aria-live', priority);
   el.textContent = '';
-  requestAnimationFrame(() => { el.textContent = message; });
+  requestAnimationFrame(() => {
+    el.textContent = message;
+  });
 }
 
 /**
@@ -31,6 +33,7 @@ export class SopApp extends LitElement {
   @state() private error: string | null = null;
 
   @state() private renderError: string | null = null;
+  @state() private lightboxBlobKey: string | null = null;
   private lightboxTrigger: HTMLElement | null = null;
   private previousView: string | null = null;
   private reconnectDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -52,27 +55,49 @@ export class SopApp extends LitElement {
     if (this.renderError) {
       return html`
         <section style="padding:16px;">
-          <p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;">Something went wrong. Please try reloading the extension.</p>
-          <button class="outline" @click=${() => { this.renderError = null; }}>Try Again</button>
+          <p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;">
+            Something went wrong. Please try reloading the extension.
+          </p>
+          <button
+            class="outline"
+            @click=${() => {
+              this.renderError = null;
+            }}
+          >
+            Try Again
+          </button>
         </section>
       `;
     }
     return html`
       <div role="application" aria-label="nuknow">
         ${this.ctrl.viewState === 'edit'
-          ? html`<button class="sop-back-button" style="margin-bottom:var(--sop-gap-card);" @click=${this.handleBack} aria-label="Back to recordings">${icon(ArrowLeft, 18)}</button>`
+          ? html`<button
+              class="sop-back-button"
+              style="margin-bottom:var(--sop-gap-card);"
+              @click=${this.handleBack}
+              aria-label="Back to recordings"
+            >
+              ${icon(ArrowLeft, 18)}
+            </button>`
           : nothing}
-
         ${this.showReconnecting
-          ? html`<p role="status" style="color:var(--pico-muted-color);font-size:0.85rem;margin:0 0 8px;">Reconnecting...</p>`
+          ? html`<p
+              role="status"
+              style="color:var(--pico-muted-color);font-size:0.85rem;margin:0 0 8px;"
+            >
+              Reconnecting...
+            </p>`
           : nothing}
-
         ${this.ctrl.error
-          ? html`<p role="alert" style="color:var(--sop-danger-color);font-size:0.85rem;margin:0 0 8px;">${this.ctrl.error}</p>`
+          ? html`<p
+              role="alert"
+              style="color:var(--sop-danger-color);font-size:0.85rem;margin:0 0 8px;"
+            >
+              ${this.ctrl.error}
+            </p>`
           : nothing}
-
         ${this.renderView()}
-
         ${this.lightboxBlobKey
           ? html`<sop-screenshot-lightbox
               .blobKey=${this.lightboxBlobKey}

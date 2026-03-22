@@ -26,10 +26,7 @@ function makeStep(overrides: Partial<RecordedStep> = {}): RecordedStep {
   };
 }
 
-function makeRecording(
-  steps: RecordedStep[] = [],
-  overrides: Partial<Recording> = {},
-): Recording {
+function makeRecording(steps: RecordedStep[] = [], overrides: Partial<Recording> = {}): Recording {
   return {
     id: 'rec-1',
     title: 'My SOP',

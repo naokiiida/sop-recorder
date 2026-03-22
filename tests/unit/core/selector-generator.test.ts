@@ -51,9 +51,7 @@ function buildTree(opts: {
 
   // Add preceding siblings
   for (const st of opts.siblingTags ?? []) {
-    siblings.push(
-      createElement({ tagName: st, parentElement: parent, children: [] }),
-    );
+    siblings.push(createElement({ tagName: st, parentElement: parent, children: [] }));
   }
 
   const child = createElement({
@@ -134,9 +132,7 @@ describe('generateSelectors', () => {
       });
       const result = generateSelectors(el);
       // Root > body:nth-of-type(1) > span:nth-of-type(3)
-      expect(result.css).toBe(
-        'html > body:nth-of-type(1) > span:nth-of-type(3)',
-      );
+      expect(result.css).toBe('html > body:nth-of-type(1) > span:nth-of-type(3)');
     });
 
     it('id takes priority over data-testid', () => {

@@ -1,10 +1,7 @@
 import { test, expect } from './fixtures/extension.js';
 import { SidePanelPage } from './fixtures/side-panel.js';
 
-test('Alt+Shift+R toggles recording via keyboard shortcut', async ({
-  context,
-  extensionId,
-}) => {
+test('Alt+Shift+R toggles recording via keyboard shortcut', async ({ context, extensionId }) => {
   const page = await context.newPage();
   const panel = new SidePanelPage(page, extensionId, context);
   await panel.goto();

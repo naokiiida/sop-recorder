@@ -13,10 +13,18 @@
 
   /* Cards & borders — theme-aware using PicoCSS vars */
   --sop-card-border: 1px solid var(--pico-muted-border-color);
-  --sop-card-hover: color-mix(in srgb, var(--pico-card-background-color) 85%, var(--pico-color) 15%);
+  --sop-card-hover: color-mix(
+    in srgb,
+    var(--pico-card-background-color) 85%,
+    var(--pico-color) 15%
+  );
 
   /* Subtle hover highlight — editable fields, nav buttons */
-  --sop-subtle-hover-bg: color-mix(in srgb, var(--pico-card-background-color) 90%, var(--pico-color) 10%);
+  --sop-subtle-hover-bg: color-mix(
+    in srgb,
+    var(--pico-card-background-color) 90%,
+    var(--pico-color) 10%
+  );
 
   /* Spacing (4px base unit) */
   --sop-gap-card: 8px;
@@ -54,7 +62,9 @@ article {
   cursor: pointer;
   color: var(--pico-muted-color);
   border-radius: 4px;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   line-height: 1;
 }
 
@@ -75,8 +85,13 @@ article {
 }
 
 @keyframes sop-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .sop-pulse {
@@ -223,7 +238,9 @@ article {
   border-radius: 4px;
   color: inherit; /* Inherit from parent — works inside article (white) and step-card (foreground) */
   opacity: 0.6;
-  transition: background 0.1s, opacity 0.1s;
+  transition:
+    background 0.1s,
+    opacity 0.1s;
   line-height: 1;
 }
 
@@ -267,7 +284,9 @@ article {
   border-radius: 4px;
   border: 1px dashed transparent;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .sop-editable:hover {
@@ -353,11 +372,11 @@ article {
 
 /* ── Drag & drop ────────────────────────────────────────────────────────────── */
 
-.sop-step-card[draggable="true"] {
+.sop-step-card[draggable='true'] {
   cursor: grab;
 }
 
-.sop-step-card[draggable="true"]:active {
+.sop-step-card[draggable='true']:active {
   cursor: grabbing;
 }
 
@@ -386,8 +405,14 @@ article {
 }
 
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── View transition animations ─────────────────────────────────────────────── */
@@ -399,25 +424,52 @@ article {
   ::view-transition-new(root) {
     animation: 150ms ease-in both fade-in;
   }
-  @keyframes fade-out { to { opacity: 0; } }
-  @keyframes fade-in { from { opacity: 0; } }
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sop-pulse { animation: none; }
-  .sop-undo-toast { animation: none; }
-  * { scroll-behavior: auto !important; }
+  .sop-pulse {
+    animation: none;
+  }
+  .sop-undo-toast {
+    animation: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Semantic resets inside card contexts ──────────────────────────────────── */
 
-.sop-step-card figure { margin: 0; }
-section > header { padding: 0; margin: 0; }
+.sop-step-card figure {
+  margin: 0;
+}
+section > header {
+  padding: 0;
+  margin: 0;
+}
 
 /* ── Utility classes ───────────────────────────────────────────────────────── */
 
-.sop-empty-state { text-align: center; padding: 2rem 0; }
-.sop-control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sop-gap-card); margin-bottom: var(--sop-gap-section); }
+.sop-empty-state {
+  text-align: center;
+  padding: 2rem 0;
+}
+.sop-control-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sop-gap-card);
+  margin-bottom: var(--sop-gap-section);
+}
 
 /* ── Focus indicators ──────────────────────────────────────────────────────── */
 

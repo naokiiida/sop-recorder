@@ -21,12 +21,7 @@ const DRAG_THRESHOLD_PX = 50;
  * Returns true if the displacement between start and end exceeds 50px,
  * indicating a drag rather than a click.
  */
-export function isDragEvent(
-  startX: number,
-  startY: number,
-  endX: number,
-  endY: number,
-): boolean {
+export function isDragEvent(startX: number, startY: number, endX: number, endY: number): boolean {
   const dx = endX - startX;
   const dy = endY - startY;
   return Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD_PX;
@@ -111,9 +106,7 @@ export interface EventFilter {
  * 2. Debounce input events (same target within 500ms)
  * 3. Deduplicate clicks (same target within 500ms)
  */
-export function createEventFilter(
-  options: EventFilterOptions = {},
-): EventFilter {
+export function createEventFilter(options: EventFilterOptions = {}): EventFilter {
   const { debounceInputs = true, deduplicateClicks = true } = options;
 
   const inputDebouncer = createInputDebouncer();

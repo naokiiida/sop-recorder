@@ -1,9 +1,5 @@
 import type { IStorageAdapter } from '../interfaces/index.js';
-import type {
-  Recording,
-  RecordingMetadata,
-  SessionRecordingState,
-} from '../../core/types.js';
+import type { Recording, RecordingMetadata, SessionRecordingState } from '../../core/types.js';
 
 const SESSION_KEY = 'sop_session_state';
 const RECORDINGS_PREFIX = 'sop_recording_';
@@ -39,7 +35,12 @@ export class ChromeStorageAdapter implements IStorageAdapter {
     // Update the index
     const index = await this.getIndex();
     const existing = index.findIndex((m) => m.id === recording.id);
-    const meta: RecordingMetadata & { id: string; title: string; createdAt: number; updatedAt: number } = {
+    const meta: RecordingMetadata & {
+      id: string;
+      title: string;
+      createdAt: number;
+      updatedAt: number;
+    } = {
       id: recording.id,
       title: recording.title,
       createdAt: recording.createdAt,

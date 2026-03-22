@@ -50,9 +50,7 @@ export class QuotaManager {
     for (const meta of recordings) {
       const updatedAt = (meta as unknown as { updatedAt?: number }).updatedAt ?? 0;
       if (updatedAt < cutoff) {
-        const recording = await this.storage.getRecording(
-          (meta as unknown as { id: string }).id,
-        );
+        const recording = await this.storage.getRecording((meta as unknown as { id: string }).id);
         if (recording) {
           const blobKeys = recording.steps
             .map((s) => s.screenshotBlobKey)

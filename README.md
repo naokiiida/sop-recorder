@@ -24,6 +24,7 @@ nuknow turns your browser clicks into step-by-step Standard Operating Procedures
 ### Chrome Web Store
 
 <!-- TODO: Replace with actual CWS link after publication -->
+
 Coming soon.
 
 ### Manual (Developer)
@@ -72,15 +73,15 @@ pnpm install
 
 ### Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start WXT dev server with hot reload |
-| `pnpm build` | Production build for Chrome |
-| `pnpm test:unit` | Run Vitest unit tests |
-| `pnpm test:e2e` | Run Playwright E2E tests |
-| `pnpm lint` | ESLint + Prettier check |
-| `pnpm lint:fix` | Auto-fix lint issues |
-| `pnpm typecheck` | TypeScript strict mode check |
+| Command          | Description                          |
+| ---------------- | ------------------------------------ |
+| `pnpm dev`       | Start WXT dev server with hot reload |
+| `pnpm build`     | Production build for Chrome          |
+| `pnpm test:unit` | Run Vitest unit tests                |
+| `pnpm test:e2e`  | Run Playwright E2E tests             |
+| `pnpm lint`      | ESLint + Prettier check              |
+| `pnpm lint:fix`  | Auto-fix lint issues                 |
+| `pnpm typecheck` | TypeScript strict mode check         |
 
 ## Testing
 
@@ -106,18 +107,18 @@ nuknow follows a **core-shell separation** pattern:
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Extension Framework | WXT |
-| Build Tool | Vite 8 (Rolldown) |
-| Language | TypeScript (strict) |
-| UI Components | Lit |
-| Base Styling | PicoCSS |
-| ZIP Export | JSZip |
-| Unit Tests | Vitest |
-| E2E Tests | Playwright |
-| Linting | ESLint + Prettier (flat config) |
-| CI | GitHub Actions (Node 22, pnpm) |
+| Layer               | Technology                      |
+| ------------------- | ------------------------------- |
+| Extension Framework | WXT                             |
+| Build Tool          | Vite 8 (Rolldown)               |
+| Language            | TypeScript (strict)             |
+| UI Components       | Lit                             |
+| Base Styling        | PicoCSS                         |
+| ZIP Export          | JSZip                           |
+| Unit Tests          | Vitest                          |
+| E2E Tests           | Playwright                      |
+| Linting             | ESLint + Prettier (flat config) |
+| CI                  | GitHub Actions (Node 22, pnpm)  |
 
 ### CI Pipeline
 
@@ -133,15 +134,15 @@ GitHub Actions runs on every push to `main` and every PR:
 
 nuknow requests only the minimum permissions needed:
 
-| Permission | Why |
-|-----------|-----|
-| `activeTab` | Capture screenshots of the active tab |
-| `tabs` | Detect navigation events |
-| `scripting` | Inject content script for event capture |
-| `storage` | Persist recordings locally |
-| `sidePanel` | Host the editing UI |
-| `alarms` | Keep service worker alive during recording |
-| `downloads` | Save exported ZIP/Markdown files |
+| Permission  | Why                                        |
+| ----------- | ------------------------------------------ |
+| `activeTab` | Capture screenshots of the active tab      |
+| `tabs`      | Detect navigation events                   |
+| `scripting` | Inject content script for event capture    |
+| `storage`   | Persist recordings locally                 |
+| `sidePanel` | Host the editing UI                        |
+| `alarms`    | Keep service worker alive during recording |
+| `downloads` | Save exported ZIP/Markdown files           |
 
 **No network permissions are requested.** Data leaves your device only through explicit file download.
 

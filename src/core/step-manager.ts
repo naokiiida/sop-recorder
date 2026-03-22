@@ -12,8 +12,12 @@ function generateTitle(event: CapturedEvent): string {
   const name = event.accessibleName.trim();
 
   const titleGenerators: Record<StepAction, () => string> = {
-    click: () => (name ? `Clicked '${name}' ${labelForTag(event)}` : `Clicked ${labelForTag(event)}`),
-    dblclick: () => (name ? `Double-clicked '${name}' ${labelForTag(event)}` : `Double-clicked ${labelForTag(event)}`),
+    click: () =>
+      name ? `Clicked '${name}' ${labelForTag(event)}` : `Clicked ${labelForTag(event)}`,
+    dblclick: () =>
+      name
+        ? `Double-clicked '${name}' ${labelForTag(event)}`
+        : `Double-clicked ${labelForTag(event)}`,
     input: () => (name ? `Typed in '${name}' field` : 'Typed in field'),
     select: () => (name ? `Selected option in '${name}'` : 'Selected option'),
     check: () => (name ? `Toggled '${name}' checkbox` : 'Toggled checkbox'),
@@ -86,9 +90,7 @@ export class StepManager {
       elementRole: event.elementRole,
       accessibleName: event.accessibleName,
       boundingBox: { ...event.boundingBox },
-      clickCoordinates: event.clickCoordinates
-        ? { ...event.clickCoordinates }
-        : undefined,
+      clickCoordinates: event.clickCoordinates ? { ...event.clickCoordinates } : undefined,
       pageUrl: event.pageUrl,
       pageTitle: event.pageTitle,
       viewport: { ...event.viewport },
@@ -149,9 +151,7 @@ export class StepManager {
       throw new Error(`Step not found: ${id}`);
     }
     if (newIndex < 0 || newIndex >= this.steps.length) {
-      throw new Error(
-        `Index out of bounds: ${newIndex} (valid range: 0–${this.steps.length - 1})`,
-      );
+      throw new Error(`Index out of bounds: ${newIndex} (valid range: 0–${this.steps.length - 1})`);
     }
 
     const removed = this.steps.splice(currentIndex, 1);

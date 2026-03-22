@@ -55,56 +55,42 @@ describe('RecordingStateMachine', () => {
     it('throws on start when already recording', () => {
       const sm = new RecordingStateMachine();
       sm.start();
-      expect(() => sm.start()).toThrow(
-        'Invalid transition: cannot "start" from "recording"',
-      );
+      expect(() => sm.start()).toThrow('Invalid transition: cannot "start" from "recording"');
     });
 
     it('throws on start when paused', () => {
       const sm = new RecordingStateMachine();
       sm.start();
       sm.pause();
-      expect(() => sm.start()).toThrow(
-        'Invalid transition: cannot "start" from "paused"',
-      );
+      expect(() => sm.start()).toThrow('Invalid transition: cannot "start" from "paused"');
     });
 
     it('throws on pause when idle', () => {
       const sm = new RecordingStateMachine();
-      expect(() => sm.pause()).toThrow(
-        'Invalid transition: cannot "pause" from "idle"',
-      );
+      expect(() => sm.pause()).toThrow('Invalid transition: cannot "pause" from "idle"');
     });
 
     it('throws on pause when already paused', () => {
       const sm = new RecordingStateMachine();
       sm.start();
       sm.pause();
-      expect(() => sm.pause()).toThrow(
-        'Invalid transition: cannot "pause" from "paused"',
-      );
+      expect(() => sm.pause()).toThrow('Invalid transition: cannot "pause" from "paused"');
     });
 
     it('throws on resume when idle', () => {
       const sm = new RecordingStateMachine();
-      expect(() => sm.resume()).toThrow(
-        'Invalid transition: cannot "resume" from "idle"',
-      );
+      expect(() => sm.resume()).toThrow('Invalid transition: cannot "resume" from "idle"');
     });
 
     it('throws on resume when recording', () => {
       const sm = new RecordingStateMachine();
       sm.start();
-      expect(() => sm.resume()).toThrow(
-        'Invalid transition: cannot "resume" from "recording"',
-      );
+      expect(() => sm.resume()).toThrow('Invalid transition: cannot "resume" from "recording"');
     });
 
     it('throws on stop when idle', () => {
       const sm = new RecordingStateMachine();
-      expect(() => sm.stop()).toThrow(
-        'Invalid transition: cannot "stop" from "idle"',
-      );
+      expect(() => sm.stop()).toThrow('Invalid transition: cannot "stop" from "idle"');
     });
 
     it('does not change state on invalid transition', () => {

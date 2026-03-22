@@ -21,9 +21,7 @@ export function getAccessibleName(element: Element): string {
   const labelledBy = element.getAttribute('aria-labelledby');
   if (labelledBy) {
     const ids = labelledBy.split(/\s+/);
-    const texts = ids
-      .map((id) => document.getElementById(id)?.textContent?.trim())
-      .filter(Boolean);
+    const texts = ids.map((id) => document.getElementById(id)?.textContent?.trim()).filter(Boolean);
     if (texts.length > 0) return texts.join(' ');
   }
 

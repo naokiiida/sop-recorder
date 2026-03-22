@@ -163,9 +163,10 @@ export class RecordingController implements ReactiveController {
 
       case 'SCREENSHOT_UNAVAILABLE': {
         // Transient warning — but don't overwrite critical persistent errors
-        const critical = this.error === 'Storage full — export or delete old recordings to continue.'
-          || this.error === 'Cannot record on this page'
-          || this.error?.startsWith('Storage is ');
+        const critical =
+          this.error === 'Storage full — export or delete old recordings to continue.' ||
+          this.error === 'Cannot record on this page' ||
+          this.error?.startsWith('Storage is ');
         if (!critical) {
           this.error = 'Screenshot unavailable for this step';
           setTimeout(() => {

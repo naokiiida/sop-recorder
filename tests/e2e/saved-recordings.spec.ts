@@ -29,10 +29,10 @@ test('saved recordings appear in home view after completing a recording', async 
   const recordingCards = panel.getRecordingCards();
   const firstCard = recordingCards.first();
   await expect(firstCard).toBeVisible({ timeout: 5000 });
-  
+
   // Verify title (rendered as <strong> in the card, not <h3>)
   await expect(firstCard.locator('strong.sop-truncate')).toContainText(expectedTitle);
-  
+
   // Verify step count info
   await expect(firstCard).toContainText(/\d+ steps?/);
 });

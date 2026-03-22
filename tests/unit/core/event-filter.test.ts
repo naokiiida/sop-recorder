@@ -266,17 +266,29 @@ describe('createEventFilter', () => {
       const t = 1000;
 
       // First click on btn-1 passes
-      expect(filter.shouldCapture(makeEvent({ type: 'click', targetId: 'btn-1', timestamp: t }))).toBe(true);
+      expect(
+        filter.shouldCapture(makeEvent({ type: 'click', targetId: 'btn-1', timestamp: t })),
+      ).toBe(true);
       // Rapid input on field-1 passes (first)
-      expect(filter.shouldCapture(makeEvent({ type: 'input', targetId: 'field-1', timestamp: t + 50 }))).toBe(true);
+      expect(
+        filter.shouldCapture(makeEvent({ type: 'input', targetId: 'field-1', timestamp: t + 50 })),
+      ).toBe(true);
       // Duplicate click on btn-1 rejected
-      expect(filter.shouldCapture(makeEvent({ type: 'click', targetId: 'btn-1', timestamp: t + 100 }))).toBe(false);
+      expect(
+        filter.shouldCapture(makeEvent({ type: 'click', targetId: 'btn-1', timestamp: t + 100 })),
+      ).toBe(false);
       // Debounced input on field-1 rejected
-      expect(filter.shouldCapture(makeEvent({ type: 'input', targetId: 'field-1', timestamp: t + 200 }))).toBe(false);
+      expect(
+        filter.shouldCapture(makeEvent({ type: 'input', targetId: 'field-1', timestamp: t + 200 })),
+      ).toBe(false);
       // Click on different button passes
-      expect(filter.shouldCapture(makeEvent({ type: 'click', targetId: 'btn-2', timestamp: t + 100 }))).toBe(true);
+      expect(
+        filter.shouldCapture(makeEvent({ type: 'click', targetId: 'btn-2', timestamp: t + 100 })),
+      ).toBe(true);
       // Navigate always passes
-      expect(filter.shouldCapture(makeEvent({ type: 'navigate', targetId: 'page', timestamp: t + 150 }))).toBe(true);
+      expect(
+        filter.shouldCapture(makeEvent({ type: 'navigate', targetId: 'page', timestamp: t + 150 })),
+      ).toBe(true);
     });
   });
 });

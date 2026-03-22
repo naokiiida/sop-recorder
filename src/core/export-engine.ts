@@ -8,10 +8,7 @@ import type { Recording } from './types.js';
  * @param mode 'zip' — relative image paths for ZIP bundle
  *             'clipboard' — text placeholders for pasting
  */
-export function generateMarkdown(
-  recording: Recording,
-  mode: 'zip' | 'clipboard',
-): string {
+export function generateMarkdown(recording: Recording, mode: 'zip' | 'clipboard'): string {
   const lines: string[] = [];
 
   // Header

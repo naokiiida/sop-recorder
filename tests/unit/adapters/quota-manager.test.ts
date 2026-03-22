@@ -92,7 +92,14 @@ describe('QuotaManager', () => {
       const oldDate = Date.now() - 31 * 24 * 60 * 60 * 1000;
       const storage = createMockStorage({
         listRecordings: vi.fn().mockResolvedValue([
-          { id: 'old-1', updatedAt: oldDate, startUrl: '', startPageTitle: '', browserVersion: '', stepCount: 0 },
+          {
+            id: 'old-1',
+            updatedAt: oldDate,
+            startUrl: '',
+            startPageTitle: '',
+            browserVersion: '',
+            stepCount: 0,
+          },
         ]),
         getRecording: vi.fn().mockResolvedValue({
           id: 'old-1',
@@ -113,7 +120,14 @@ describe('QuotaManager', () => {
       const recentDate = Date.now() - 1000;
       const storage = createMockStorage({
         listRecordings: vi.fn().mockResolvedValue([
-          { id: 'recent-1', updatedAt: recentDate, startUrl: '', startPageTitle: '', browserVersion: '', stepCount: 0 },
+          {
+            id: 'recent-1',
+            updatedAt: recentDate,
+            startUrl: '',
+            startPageTitle: '',
+            browserVersion: '',
+            stepCount: 0,
+          },
         ]),
       });
       const manager = new QuotaManager(storage, createMockBlobStore());

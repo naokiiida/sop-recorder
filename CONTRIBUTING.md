@@ -36,6 +36,7 @@ Load the extension from `.output/chrome-mv3-dev` in `chrome://extensions` (Devel
 ### Branch Naming
 
 Use descriptive branch names:
+
 - `feat/short-description` — new features
 - `fix/short-description` — bug fixes
 - `refactor/short-description` — code improvements

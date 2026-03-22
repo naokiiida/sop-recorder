@@ -44,19 +44,14 @@ export interface IBlobStore {
 
 export interface ITabAdapter {
   getCurrentTab(): Promise<{ id: number; url: string; title: string } | null>;
-  sendMessageToTab(
-    tabId: number,
-    message: BackgroundToContentMessage,
-  ): Promise<void>;
+  sendMessageToTab(tabId: number, message: BackgroundToContentMessage): Promise<void>;
   injectContentScript(tabId: number): Promise<void>;
 }
 
 // ── Message Bus ─────────────────────────────────────────────────────────────
 
 export interface IMessageBus {
-  onContentMessage(
-    handler: (message: ContentMessage, tabId: number) => void,
-  ): void;
+  onContentMessage(handler: (message: ContentMessage, tabId: number) => void): void;
   onPanelConnect(handler: (port: PanelPort) => void): void;
 }
 

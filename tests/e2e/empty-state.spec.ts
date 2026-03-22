@@ -1,10 +1,7 @@
 import { test, expect } from './fixtures/extension.js';
 import { SidePanelPage } from './fixtures/side-panel.js';
 
-test('side panel shows empty state when no recordings exist', async ({
-  context,
-  extensionId,
-}) => {
+test('side panel shows empty state when no recordings exist', async ({ context, extensionId }) => {
   const page = await context.newPage();
   const panel = new SidePanelPage(page, extensionId, context);
   await panel.goto();
