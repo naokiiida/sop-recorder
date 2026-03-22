@@ -1,0 +1,35 @@
+Record browser steps into shareable SOPs — 100% local, no account needed.
+
+nuknow turns your browser clicks into step-by-step Standard Operating Procedures (SOPs) with annotated screenshots and clear instructions.
+
+KEY FEATURES
+
+- One-click recording: Start capturing your workflow with a single click. Every action — clicks, form inputs, navigation — is automatically logged as a numbered step.
+
+- Annotated screenshots: Each step includes an automatic screenshot with the target element highlighted, so readers know exactly where to click.
+
+- Edit and refine: Reorder steps, edit descriptions, add or remove steps, and annotate screenshots — all within the side panel.
+
+- Export to Markdown: Download your SOP as a clean Markdown file with embedded images, ready for docs, wikis, or team knowledge bases. Export as a ZIP bundle for easy sharing.
+
+- Copy to clipboard: Instantly copy your SOP as Markdown text to paste into Notion, Confluence, GitHub, or any tool that supports Markdown.
+
+PRIVACY FIRST
+
+- 100% local processing: All data stays on your device. Nothing is sent to any server, ever.
+- Zero data collection: No analytics, no tracking, no telemetry.
+- No account required: Install and start recording immediately. No sign-up, no login.
+
+FREE AND OPEN SOURCE
+
+nuknow is completely free with no limits on the number of SOPs, steps, or exports. The source code is open and available on GitHub.
+
+PERFECT FOR
+
+- Onboarding new team members with visual guides
+- Documenting internal tools and processes
+- Creating help articles and tutorials
+- Bug reporting with step-by-step reproduction
+- Personal reference for complex workflows
+
+Category: Productivity

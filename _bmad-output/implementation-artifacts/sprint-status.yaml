@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-20
+last_updated: 2026-03-22
 project: sop-recorder
 project_key: NOKEY
 tracking_system: file-system
@@ -110,8 +110,8 @@ development_status:
    epic-7-retrospective: optional
 
    # ── Epic 8: Release Preparation ──
-   epic-8: backlog
-   8-1-create-extension-icons-and-cws-store-assets: backlog
-   8-2-create-readme-and-repository-setup: backlog
+   epic-8: in-progress
+   8-1-create-extension-icons-and-cws-store-assets: review
+   8-2-create-readme-and-repository-setup: ready-for-dev
    8-3-chrome-web-store-submission-validation: backlog
    epic-8-retrospective: optional
