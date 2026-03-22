@@ -23,17 +23,17 @@ so that the store submission is accepted on first attempt.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Push to remote and fix CI (AC: #1)
-  - [ ] Push all 18 local commits to `origin/main`
-  - [ ] Monitor CI pipeline run — check all 5 jobs: lint, typecheck, unit-test, build+size+manifest, e2e
-  - [ ] If any CI job fails, diagnose and fix locally, push fix commit
-  - [ ] Iterate until all CI jobs pass green
-  - [ ] **Note:** E2E tests require `pnpm exec playwright install --with-deps chromium` in CI — this is already configured in `.github/workflows/ci.yml`
+- [x] Task 1: Push to remote and fix CI (AC: #1)
+  - [x] Push all 18 local commits to `origin/main`
+  - [x] Monitor CI pipeline run — check all 5 jobs: lint, typecheck, unit-test, build+size+manifest, e2e
+  - [x] If any CI job fails, diagnose and fix locally, push fix commit
+  - [x] Iterate until all CI jobs pass green
+  - [x] **Note:** E2E tests require `pnpm exec playwright install --with-deps chromium` in CI — this is already configured in `.github/workflows/ci.yml`
 
-- [ ] Task 2: Validate `pnpm zip` output (AC: #2, #3)
-  - [ ] Run `pnpm zip` and verify it produces `.output/nuknow-1.0.0-chrome.zip` (or similar)
-  - [ ] Verify ZIP size < 2 MB (architecture budget: < 2 MB required, < 1 MB nice-to-have)
-  - [ ] Unzip and inspect `manifest.json` for required CWS fields:
+- [x] Task 2: Validate `pnpm zip` output (AC: #2, #3)
+  - [x] Run `pnpm zip` and verify it produces `.output/nuknow-1.0.0-chrome.zip` (or similar)
+  - [x] Verify ZIP size < 2 MB (architecture budget: < 2 MB required, < 1 MB nice-to-have)
+  - [x] Unzip and inspect `manifest.json` for required CWS fields:
     - `manifest_version: 3`
     - `name: "nuknow"`
     - `version: "1.0.0"`
@@ -45,29 +45,29 @@ so that the store submission is accepted on first attempt.
     - `side_panel.default_path`
     - `content_scripts` array
     - `commands.toggle-recording`
-  - [ ] Verify no `host_permissions`, no `<all_urls>`, no `optional_permissions` unless intentional
+  - [x] Verify no `host_permissions`, no `<all_urls>`, no `optional_permissions` unless intentional
 
-- [ ] Task 3: CSP and security validation (AC: #4)
-  - [ ] Verify built output contains no dynamic code execution patterns (unsafe-eval, dynamic Function constructors)
-  - [ ] Verify no remote `<script>` tags or `importScripts()` with external URLs
-  - [ ] Verify no inline `<script>` in HTML files — Vite bundles everything
-  - [ ] Confirm Lit uses CSP-safe tagged template literals (no string-based rendering)
-  - [ ] Optionally run CWS review simulator or manual checklist against MV3 CSP rules
+- [x] Task 3: CSP and security validation (AC: #4)
+  - [x] Verify built output contains no dynamic code execution patterns (unsafe-eval, dynamic Function constructors)
+  - [x] Verify no remote `<script>` tags or `importScripts()` with external URLs
+  - [x] Verify no inline `<script>` in HTML files — Vite bundles everything
+  - [x] Confirm Lit uses CSP-safe tagged template literals (no string-based rendering)
+  - [x] Optionally run CWS review simulator or manual checklist against MV3 CSP rules
 
-- [ ] Task 4: Create privacy policy (AC: #5)
-  - [ ] Create `store/privacy-policy.md` with zero data collection statement
-  - [ ] Include: no network requests, no telemetry, no analytics, no user accounts, no remote storage
-  - [ ] State data stays on device in chrome.storage and IndexedDB, cleared on uninstall
-  - [ ] Note explicit user action required for any data to leave the device (file download export only)
-  - [ ] CWS requires a privacy policy URL — note that this can be hosted as a GitHub raw file or GitHub Pages
+- [x] Task 4: Create privacy policy (AC: #5)
+  - [x] Create `store/privacy-policy.md` with zero data collection statement
+  - [x] Include: no network requests, no telemetry, no analytics, no user accounts, no remote storage
+  - [x] State data stays on device in chrome.storage and IndexedDB, cleared on uninstall
+  - [x] Note explicit user action required for any data to leave the device (file download export only)
+  - [x] CWS requires a privacy policy URL — note that this can be hosted as a GitHub raw file or GitHub Pages
 
-- [ ] Task 5: Enhance manifest tests for CWS completeness (AC: #3)
-  - [ ] Extend existing `tests/unit/manifest.test.ts` with CWS-specific assertions:
+- [x] Task 5: Enhance manifest tests for CWS completeness (AC: #3)
+  - [x] Extend existing `tests/unit/manifest.test.ts` with CWS-specific assertions:
     - `icons` map has all 4 sizes (16, 32, 48, 128)
     - `action.default_icon` is present
     - No `host_permissions` unless intentional
     - `version` matches semver pattern
-  - [ ] Run `pnpm test:unit -- tests/unit/manifest.test.ts` to validate
+  - [x] Run `pnpm test:unit -- tests/unit/manifest.test.ts` to validate
 
 - [ ] Task 6: Final CI validation (AC: #8)
   - [ ] Commit all new/modified files from Tasks 2-5

@@ -9,6 +9,9 @@ interface Manifest {
   version: string;
   description: string;
   permissions: string[];
+  host_permissions?: string[];
+  icons?: Record<string, string>;
+  action?: { default_icon?: Record<string, string> };
   background: { service_worker: string };
   side_panel: { default_path: string };
   content_scripts: { matches: string[]; js: string[] }[];
@@ -65,5 +68,26 @@ describe.skipIf(!manifestExists)('manifest.json validation', () => {
     expect(manifest.commands).toBeDefined();
     expect(manifest.commands!['toggle-recording']).toBeDefined();
     expect(manifest.commands!['toggle-recording']!.description).toBeTruthy();
+  });
+
+  // CWS-specific validations
+  it('has icons for all required sizes (16, 32, 48, 128)', () => {
+    expect(manifest.icons).toBeDefined();
+    for (const size of ['16', '32', '48', '128']) {
+      expect(manifest.icons![size]).toBeTruthy();
+    }
+  });
+
+  it('has action.default_icon', () => {
+    expect(manifest.action).toBeDefined();
+    expect(manifest.action!.default_icon).toBeDefined();
+  });
+
+  it('does not declare host_permissions', () => {
+    expect(manifest.host_permissions).toBeUndefined();
+  });
+
+  it('version matches semver pattern', () => {
+    expect(manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });
