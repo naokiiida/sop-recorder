@@ -66,19 +66,19 @@ export class RecordingController implements ReactiveController {
 
   private connect(): void {
     try {
-      console.log('[Controller] Attempting to connect to background...');
+      Logger.info('RecordingController', 'Attempting to connect to background');
       this.port = browser.runtime.connect({ name: 'sidepanel' });
 
       this.port.onMessage.addListener((msg: BackgroundToPanelMessage) => {
         try {
           this.handleMessage(msg);
         } catch (err) {
-          Logger.error('recording-controller', 'Error handling message', { originalError: err });
+          Logger.error('RecordingController', 'Error handling message', { originalError: err });
         }
       });
 
       this.port.onDisconnect.addListener(() => {
-        console.warn('[Controller] Port disconnected');
+        Logger.warn('RecordingController', 'Port disconnected');
         this.port = null;
         this.reconnecting = true;
         this.host.requestUpdate();
@@ -94,7 +94,7 @@ export class RecordingController implements ReactiveController {
 
       // Clear reconnecting state on successful connection
       if (this.reconnecting) {
-        console.log('[Controller] Reconnected successfully');
+        Logger.info('RecordingController', 'Reconnected successfully');
         this.reconnecting = false;
         this.host.requestUpdate();
       }
@@ -103,13 +103,12 @@ export class RecordingController implements ReactiveController {
         this.reconnectTimer = null;
       }
 
-      console.log('[Controller] Connected. Requesting initial state.');
+      Logger.info('RecordingController', 'Connected. Requesting initial state.');
       // Request initial state (also serves as full state sync after reconnect)
       this.send({ type: 'GET_STATE' });
       this.send({ type: 'LIST_RECORDINGS' });
     } catch (err) {
-      console.error('[Controller] Connection failed', err);
-      Logger.error('recording-controller', 'Port connection failed', { originalError: err });
+      Logger.error('RecordingController', 'Port connection failed', { originalError: err });
     }
   }
 

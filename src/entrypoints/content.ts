@@ -1,4 +1,5 @@
 import type { BackgroundToContentMessage } from '../core/types.js';
+import { Logger } from '../core/logger.js';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -29,16 +30,16 @@ export default defineContentScript({
     }
 
     async function handleMessageAsync(message: BackgroundToContentMessage): Promise<void> {
-      console.log('[SOP Recorder] content received message:', message.type);
+      Logger.debug('content', `received message: ${message.type}`);
       try {
         switch (message.type) {
           case 'START_CAPTURE': {
-            console.log('[SOP Recorder] Loading recorder module...');
+            Logger.info('content', 'Loading recorder module');
             if (!recorder) {
               recorder = await import('../content/recorder.js');
             }
             recorder.startCapture();
-            console.log('[SOP Recorder] Capture started');
+            Logger.info('content', 'Capture started');
             break;
           }
           case 'STOP_CAPTURE':
@@ -58,7 +59,7 @@ export default defineContentScript({
             break;
         }
       } catch (err) {
-        console.error('[SOP Recorder] content script error:', err);
+        Logger.error('content', 'script error', { error: String(err) });
       }
     }
   },

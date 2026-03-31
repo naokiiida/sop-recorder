@@ -15,6 +15,7 @@ import {
 } from './element-info.js';
 import { injectOverlay, removeOverlay as removeOverlayImpl } from './overlay.js';
 import { createNavigationDetector } from './navigation-detector.js';
+import { Logger } from '../core/logger.js';
 
 // ── State ───────────────────────────────────────────────────────────────────
 
@@ -235,7 +236,7 @@ function sendEvent(event: CapturedEvent): void {
       flushBuffer();
     })
     .catch((err: unknown) => {
-      console.warn('[SOP Recorder] Failed to send event, buffering:', err);
+      Logger.warn('recorder', 'Failed to send event, buffering', { error: String(err) });
       eventBuffer.push(event);
     });
 }
@@ -249,7 +250,7 @@ function flushBuffer(): void {
     browser.runtime
       .sendMessage({ type: 'STEP_CAPTURED', payload: buffered })
       .catch((err: unknown) => {
-        console.warn('[SOP Recorder] Buffer flush failed, re-queuing:', err);
+        Logger.warn('recorder', 'Buffer flush failed, re-queuing', { error: String(err) });
         eventBuffer.push(buffered);
       });
   }
