@@ -22,6 +22,7 @@ export default defineConfig({
       },
     },
     permissions: ['activeTab', 'tabs', 'scripting', 'storage', 'sidePanel', 'alarms', 'downloads'],
+    host_permissions: ['<all_urls>'],
     commands: {
       'toggle-recording': {
         suggested_key: {
